@@ -1,8 +1,8 @@
 import {tiny, defs} from './examples/common.js';
+import { Shape_From_File } from './examples/obj-file-demo.js'
 
 // Pull these names into this module's scope for convenience:
 const { vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component } = tiny;
-const {  Textured_Phong } = defs;
 
 // TODO: you should implement the required classes here or in another file.
 
@@ -44,8 +44,6 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.materials.rgb = { shader: tex_phong, ambient: .5, texture: new Texture( "assets/rgb.jpg" ) }
         this.materials.court = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/court.png" )}
 
-        this.ball_location = vec3(1, 1, 1);
-        this.ball_radius = 0.25;
 
         // TODO: you should create a Spline class instance
       }
