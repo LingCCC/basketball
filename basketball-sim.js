@@ -29,7 +29,8 @@ const Basketball_Sim_base = defs.Assignment2_base =
         // Don't define more than one blueprint for the same thing here.
         this.shapes = { 'box'  : new defs.Cube(),
           'ball' : new defs.Subdivision_Sphere( 4 ),
-          'axis' : new defs.Axis_Arrows() };
+          'axis' : new defs.Axis_Arrows(), 
+          'ring' : new defs.Cylindrical_Tube(20, 20, [1,2])};
 
         // *** Materials: ***  A "material" used on individual shapes specifies all fields
         // that a Shader queries to light/color it properly.  Here we use a Phong shader.
@@ -42,7 +43,10 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.materials.plastic = { shader: phong, ambient: .2, diffusivity: 1, specularity: .5, color: color( .9,.5,.9,1 ) }
         this.materials.metal   = { shader: phong, ambient: .2, diffusivity: 1, specularity:  1, color: color( .9,.5,.9,1 ) }
         this.materials.rgb = { shader: tex_phong, ambient: .5, texture: new Texture( "assets/rgb.jpg" ) }
+        this.materials.wall2 = { shader: phong, ambient: .2, diffusivity: 1, specularity: .5, color: color( .9,.5,.9,1 ) }
+        this.materials.wall = {shader: tex_phong, ambient: .2, texture: new Texture( "assets/wall.jpg" )}
         this.materials.court = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/court.png" )}
+        this.materials.backboard = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/backboard.jpg" )}
 
 
         // TODO: you should create a Spline class instance
@@ -132,24 +136,42 @@ export class Basketball_Sim extends Basketball_Sim_base
     // translation(), scale(), and rotation() to generate matrices, and the
     // function times(), which generates products of matrices.
 
-    const blue = color( 0,0,1,1 ), yellow = color( 1,0.7,0,1 ), 
+    const blue = color( 0,0,1,1 ), yellow = color( 1,0.7,0,1 ), white = color(1, 1, 1, 1), red = color(1, 0, 0, 1),
           wall_color = color( 0.7, .7, 0.7, 1 ), 
-          blackboard_color = color( 0.2, 0.2, 0.2, 1 );
+          orange = color( 1, 0.5, 0, 1 ),
+          blackboard_color = color( .2, .2, .2, 1 );
 
     const t = this.t = this.uniforms.animation_time/1000;
 
-    // !!! Draw ground
+    //court
     let floor_transform = Mat4.translation(0, 0, 0).times(Mat4.scale(10, 0.01, 10));
     this.shapes.box.draw( caller, this.uniforms, floor_transform, { ...this.materials.court } );
 
-    // TODO: you should draw scene here.
-    // TODO: you can change the wall and board as needed.
+    //wall
     let wall_transform = Mat4.translation(0, 5, -10).times(Mat4.scale(10, 5, 0.1));
-    this.shapes.box.draw( caller, this.uniforms, wall_transform, { ...this.materials.plastic, color: wall_color } );
-    //let board_transform = Mat4.translation(3, 6, -1).times(Mat4.scale(2.5, 2.5, 0.1));
+    this.shapes.box.draw( caller, this.uniforms, wall_transform, { ...this.materials.wall, color: wall_color } );
+    let left_wall_transform = Mat4.translation(-10, 5, 0).times(Mat4.scale(.1, 5, 10));
+    this.shapes.box.draw( caller, this.uniforms, left_wall_transform, { ...this.materials.wall, color: wall_color } );
+    let right_wall_transform = Mat4.translation(10, 5, 0).times(Mat4.scale(.1, 5, 10));
+    this.shapes.box.draw( caller, this.uniforms, right_wall_transform, { ...this.materials.wall, color: wall_color } );
+
+    let ceiling_transform = Mat4.translation(0, 10, 0).times(Mat4.scale(10, 0.1, 10));
+    //this.shapes.box.draw( caller, this.uniforms, ceiling_transform, { ...this.materials.wall, color: wall_color }  );
+
+    //hoop
+    let board_transform = Mat4.translation(0, 7.5, -9.8).times(Mat4.scale(2.25, 1.5, 0.2));
+    this.shapes.box.draw( caller, this.uniforms, board_transform, { ...this.materials.backboard }  );
+    let board_stand_transform = Mat4.translation(0, 3, -9.8).times(Mat4.scale(.15, 3, 0.2));
+    this.shapes.box.draw( caller, this.uniforms, board_stand_transform, { ...this.materials.metal, color:  color(.75, .75, .75, 1) }  );
+    let ring_transform =  Mat4.translation(0, 6.5, -8.8)
+                          .times( Mat4.rotation(Math.PI/2, 1, 0, 0))
+                          .times(Mat4.scale(.75, .75, .05))
+    this.shapes.ring.draw(caller, this.uniforms, ring_transform, { ...this.materials.plastic, color: red }  )
+
+    //ball
     let ball_transform = Mat4.translation(this.ball_location[0], this.ball_location[1], this.ball_location[2])
                              .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
-    this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.plastic, color: blackboard_color } );
+    this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.plastic, color: orange } );
 }
 
 render_controls()
