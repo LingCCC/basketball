@@ -46,6 +46,16 @@ const Basketball_Sim_base = defs.Assignment2_base =
 
 
         // TODO: you should create a Spline class instance
+        //Variable Declaration For Basketball Travel
+        this.UDangle = 60;
+        this.LRangle = 90;
+        this.velocity = 60;
+        this.xVelocity = 0;
+        this.zVelocity = 0;
+        this.yVelocity = 0;
+
+        this.ball_location = vec3(0, 0, 0);
+        this.ball_radius = 0.25;
       }
 
       render_animation( caller )
@@ -137,17 +147,70 @@ export class Basketball_Sim extends Basketball_Sim_base
     let wall_transform = Mat4.translation(0, 5, -10).times(Mat4.scale(10, 5, 0.1));
     this.shapes.box.draw( caller, this.uniforms, wall_transform, { ...this.materials.plastic, color: wall_color } );
     //let board_transform = Mat4.translation(3, 6, -1).times(Mat4.scale(2.5, 2.5, 0.1));
-    //this.shapes.box.draw( caller, this.uniforms, board_transform, { ...this.materials.plastic, color: blackboard_color } );
-  }
+    let ball_transform = Mat4.translation(this.ball_location[0], this.ball_location[1], this.ball_location[2])
+                             .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
+    this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.plastic, color: blackboard_color } );
+}
 
-  render_controls()
-  {                                 
-    // render_controls(): Sets up a panel of interactive HTML elements, including
-    // buttons with key bindings for affecting this scene, and live info readouts.
-    this.control_panel.innerHTML += "Assignment 2: IK Engine";
-    this.new_line();    
-    // TODO: You can add your button events for debugging. (optional)
-    this.key_triggered_button( "Debug", [ "Shift", "D" ], null );
-    this.new_line();
-  }
+render_controls()
+{
+// render_controls(): Sets up a panel of interactive HTML elements, including
+// buttons with key bindings for affecting this scene, and live info readouts.
+this.control_panel.innerHTML += "Assignment 2: IK Engine";
+this.new_line();
+// TODO: You can add your button events for debugging. (optional)
+this.key_triggered_button( "Debug", [ "Shift", "D" ], null );
+this.new_line();
+this.key_triggered_button( "Angle Up", ["I"], this.angle_up );
+this.new_line();
+this.key_triggered_button( "Angle Right", ["L"], this.angle_right );
+this.new_line();
+this.key_triggered_button( "Angle Down", ["K"], this.angle_down );
+this.new_line();
+this.key_triggered_button( "Angle Left", ["J"], this.angle_left );
+this.new_line();
+this.key_triggered_button( "Inc Power", ["P"], this.power_up );
+this.new_line();
+this.key_triggered_button( "Dec Power", ["U"], this.power_down );
+this.new_line();
+}
+
+//Simple Functions to adjust ball angle
+update_velocity()
+{
+  this.xVelocity = this.velocity * math.cos(this.LRangle * 3.14/180);
+  this.yVelocity = this.velocity * math.sin(this.UDangle * 3.14/180);
+  this.zVelocity = this.velocity * math.sin(this.LRangle * 3.14/180);
+}
+
+angle_up()
+{
+  this.UDangle++;
+  this.update_velocity();
+}
+angle_down()
+{
+  this.UDangle--;
+  this.update_velocity();
+}
+angle_right()
+{
+  this.LRangle++;
+  this.update_velocity();
+}
+angle_left()
+{
+  this.LRangle--;
+  this.update_velocity();
+}
+power_up()
+{
+  this.velocity++;
+  this.update_velocity();
+}
+power_down()
+{
+  this.velocity--;
+  this.update_velocity();
+}
 }
