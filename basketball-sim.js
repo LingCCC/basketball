@@ -221,7 +221,7 @@ this.new_line();
 this.key_triggered_button( "Dec Power", ["U"], this.power_down );
 this.new_line();
 this.key_triggered_button("Shoot", ["O"], () => {
-  this.running = !this.running;
+  this.running = true;
 });
 this.new_line();
 this.key_triggered_button( "Reset", ["["], this.reset );
@@ -233,6 +233,7 @@ reset() {
   this.ball.acc = vec3(0, 0, 0);
   this.ball.vel = vec3(0, 0, 0);
   this.ball.ext_force = vec3(0, 0, 0);
+  this.running = false;
 }
 
 update(dt) {
