@@ -33,7 +33,10 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.shapes = { 'box'  : new defs.Cube(),
           'ball' : new defs.Subdivision_Sphere( 4 ),
           'axis' : new defs.Axis_Arrows(), 
-          'ring' : new defs.Cylindrical_Tube(20, 20, [1,2])};
+          'ring' : new defs.Cylindrical_Tube(20, 20, [1,2]),
+          'wall' : new Shape_From_File('assets/Fence.obj'),
+          'bench': new Shape_From_File('assets/Bench_HighRes.obj'),
+          'tree': new Shape_From_File('assets/Tree.obj')};
 
         // *** Materials: ***  A "material" used on individual shapes specifies all fields
         // that a Shader queries to light/color it properly.  Here we use a Phong shader.
@@ -47,11 +50,12 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.materials.metal   = { shader: phong, ambient: .2, diffusivity: 1, specularity:  1, color: color( .9,.5,.9,1 ) }
         this.materials.rgb = { shader: tex_phong, ambient: .5, texture: new Texture( "assets/rgb.jpg" ) }
         this.materials.wall2 = { shader: phong, ambient: .2, diffusivity: 1, specularity: .5, color: color( .9,.5,.9,1 ) }
-        this.materials.wall = {shader: tex_phong, ambient: .2, texture: new Texture( "assets/wall.jpg" )}
+        this.materials.wall = {shader: tex_phong, ambient: .2, texture: new Texture( "assets/Fence.jpg" )}
         this.materials.court = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/court.png" )}
         this.materials.backboard = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/backboard.jpg" )}
         this.materials.ball = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/basketball.png" )}
         this.materials.pure_color = {shader: phong, ambient: 1, diffusivity: 0, specularity: 0, color: color(.9, .5, .9, 1)}
+        this.materials.gravel = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/road.png" )}
 
 
         // TODO: you should create a Spline class instance
@@ -285,20 +289,45 @@ export class Basketball_Sim extends Basketball_Sim_base
     const t = this.t = this.uniforms.animation_time/1000;
 
     //court
-    let floor_transform = Mat4.translation(0, 0, 0).times(Mat4.scale(10, 0.01, 10));
-    this.shapes.box.draw( caller, this.uniforms, floor_transform, { ...this.materials.court } );
+    let court_transform = Mat4.translation(0, 0, 0).times(Mat4.scale(10, 0.01, 10));
+    this.shapes.box.draw( caller, this.uniforms, court_transform, { ...this.materials.court } );
 
     //wall
     const wall_height = 5; 
-    let wall_transform = Mat4.translation(0, wall_height, -10).times(Mat4.scale(10, wall_height, 0.1));
-    this.shapes.box.draw( caller, this.uniforms, wall_transform, { ...this.materials.wall, color: wall_color } );
-    let left_wall_transform = Mat4.translation(-10, wall_height, 0).times(Mat4.scale(.1, wall_height, 10));
-    this.shapes.box.draw( caller, this.uniforms, left_wall_transform, { ...this.materials.wall, color: wall_color } );
-    let right_wall_transform = Mat4.translation(10, wall_height, 0).times(Mat4.scale(.1, wall_height, 10));
-    this.shapes.box.draw( caller, this.uniforms, right_wall_transform, { ...this.materials.wall, color: wall_color } );
+    // let wall_transform = Mat4.translation(0, wall_height, -10).times(Mat4.scale(10, wall_height, 0.1));
+    // this.shapes.box.draw( caller, this.uniforms, wall_transform, { ...this.materials.wall, color: wall_color } );
+    // let left_wall_transform = Mat4.translation(-10, wall_height, 0).times(Mat4.scale(.1, wall_height, 10));
+    // this.shapes.box.draw( caller, this.uniforms, left_wall_transform, { ...this.materials.wall, color: wall_color } );
+    // let right_wall_transform = Mat4.translation(10, wall_height, 0).times(Mat4.scale(.1, wall_height, 10));
+    // this.shapes.box.draw( caller, this.uniforms, right_wall_transform, { ...this.materials.wall, color: wall_color } );
 
-    let ceiling_transform = Mat4.translation(0, 10, 0).times(Mat4.scale(10, 0.1, 10));
-    //this.shapes.box.draw( caller, this.uniforms, ceiling_transform, { ...this.materials.wall, color: wall_color }  );
+    //fence
+    let wall_transform = Mat4.translation(0, 5.5, -10).times(Mat4.scale(5.7, 6, 1));
+    this.shapes.wall.draw( caller, this.uniforms, wall_transform, { ...this.materials.wall, color: wall_color } );
+    let left_wall_transform = Mat4.translation(-10, 5.5, 0)
+                                  .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
+                                  .times(Mat4.scale(5.7, 6, 1));
+    this.shapes.wall.draw( caller, this.uniforms, left_wall_transform, { ...this.materials.wall, color: wall_color } );
+    let right_wall_transform = Mat4.translation(10, 5.5, 0)
+                                   .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
+                                   .times(Mat4.scale(5.7, 6, 1));
+    this.shapes.wall.draw( caller, this.uniforms, right_wall_transform, { ...this.materials.wall, color: wall_color } );
+
+    //larger floor
+    let floor_transform = Mat4.translation(0, -.05, 0).times(Mat4.scale(100, 0.01, 100));
+    this.shapes.box.draw( caller, this.uniforms, floor_transform, { ...this.materials.plastic, color: color(117/255, 95/255, 84/255, 1) } );
+
+    //bench
+    let bench_transform_1 = Mat4.translation(-12, 1, 3)
+                              .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
+                              .times(Mat4.scale(2, 2, 2));
+    this.shapes.bench.draw(caller, this.uniforms, bench_transform_1, { ...this.materials.metal, color: color(.9, .9, .9, 1) });
+    let bench_transform_2 = Mat4.translation(-12, 1, -3)
+                              .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
+                              .times(Mat4.scale(2, 2, 2));
+    this.shapes.bench.draw(caller, this.uniforms, bench_transform_2, { ...this.materials.metal, color: color(.9, .9, .9, 1) })
+
+    this.shapes.tree.draw(caller, this.uniforms, Mat4.translation(0, 4, 0), {...this.materials.tree})
 
     //hoop
     let board_transform = Mat4.translation(0, 7.5, -9.8).times(Mat4.scale(2.25, 1.5, 0.2));
