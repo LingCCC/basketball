@@ -9,7 +9,7 @@ class Ball {
     constructor() {
         this.mass = 1; // kg
         this.radius = 0.037; // meter
-        this.pos = vec3(0, 5, 0);
+        this.pos = vec3(0, 0, 0);
         this.vel = vec3(0, 0, 0);
         this.acc = vec3(0, 0, 0);
         this.ext_force = vec3(0, 0, 0);
@@ -51,9 +51,17 @@ class Ball {
     }
 
     symplectic_euler(b, dt) {
+        console.log("acc 1: " + b.ext_force);
         b.acc = b.ext_force.times(1 / b.mass);
+        console.log("acc 2: " + b.ext_force);
+
+        console.log("vel 1: " + b.vel);
         b.vel = b.vel.plus(b.acc.times(dt));
+        console.log("vel 2: " + b.vel);
+
+        console.log("pos 1: " + b.pos);
         b.pos = b.pos.plus(b.vel.times(dt));
+        console.log("pos 2: " + b.pos);
     }
 
     draw(webgl_manager, uniforms, shapes, materials) {

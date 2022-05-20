@@ -1,5 +1,7 @@
 import {tiny, defs} from './examples/common.js';
 import { Shape_From_File } from './examples/obj-file-demo.js'
+import { Ball } from './ball.js';
+import { Character } from './character.js';
 
 // Pull these names into this module's scope for convenience:
 const { vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component } = tiny;
@@ -58,8 +60,16 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.zVelocity = 0;
         this.yVelocity = 0;
 
-        this.ball_location = vec3(0, 0, 0);
-        this.ball_radius = 0.25;
+        // this.ball_location = vec3(0, 0, 0);
+        // this.ball_radius = 0.25;
+
+        this.ball = new Ball();
+        this.time_step = 0.001;
+        this.running = false;
+        this.t_sim = 0.0;
+        this.sim_speed = 1.0;
+        this.g_acc = vec3(0, -9.8, 0);
+        this.force = vec3(0, 0, 0);
       }
 
       render_animation( caller )
@@ -169,9 +179,24 @@ export class Basketball_Sim extends Basketball_Sim_base
     this.shapes.ring.draw(caller, this.uniforms, ring_transform, { ...this.materials.plastic, color: red }  )
 
     //ball
-    let ball_transform = Mat4.translation(this.ball_location[0], this.ball_location[1], this.ball_location[2])
-                             .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
-    this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.plastic, color: orange } );
+    // let ball_transform = Mat4.translation(this.ball_location[0], this.ball_location[1], this.ball_location[2])
+    //                          .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
+    // this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.plastic, color: orange } );
+    let dt = this.dt = Math.min(1 / 30, this.uniforms.animation_delta_time / 1000);
+    dt *= this.sim_speed;
+
+    if (this.running) {
+      const t_next = this.t_sim + dt;
+      while (this.t_sim < t_next) {
+        this.update(this.time_step);
+        this.t_sim += this.time_step;
+      }
+    }
+
+    this.ball.draw(caller, this.uniforms, this.shapes, this.materials);
+
+    // console.log("f: " + this.ball.ext_force);
+    // console.log("p: " + this.ball.ext_force);
 }
 
 render_controls()
@@ -195,6 +220,45 @@ this.key_triggered_button( "Inc Power", ["P"], this.power_up );
 this.new_line();
 this.key_triggered_button( "Dec Power", ["U"], this.power_down );
 this.new_line();
+this.key_triggered_button("Shoot", ["O"], () => {
+  this.running = !this.running;
+});
+this.new_line();
+this.key_triggered_button( "Reset", ["["], this.reset );
+this.new_line();
+}
+
+reset() {
+  this.ball.pos = vec3(0, 0, 0);
+  this.ball.acc = vec3(0, 0, 0);
+  this.ball.vel = vec3(0, 0, 0);
+  this.ball.ext_force = vec3(0, 0, 0);
+}
+
+update(dt) {
+  const ground = vec3(0, 0, 0);
+  const ground_normal = vec3(0, 1, 0);
+  const front_wall = vec3(0, 0, -10);
+  const front_wall_normal = vec3(0, 0, 1);
+  const left_wall = vec3(-10, 0, 0);
+  const left_wall_normal = vec3(1, 0, 0);
+  const right_wall = vec3(10, 0, 0);
+  const right_wall_normal = vec3(-1, 0, 0);
+  const back_wall = vec3(0, 0, 10);
+  const back_wall_normal = vec3(0, 0, -1);
+
+  this.ball.ext_force = this.g_acc.times(this.ball.mass);
+  this.ball.ext_force.add_by(this.force);
+  this.force = vec3(0, 0, 0);
+  
+  this.ball.calculate_force(ground, ground_normal); // ground
+  this.ball.calculate_force(front_wall, front_wall_normal); // front wall
+  this.ball.calculate_force(left_wall, left_wall_normal); // left wall
+  this.ball.calculate_force(right_wall, right_wall_normal); // right wall
+  this.ball.calculate_force(back_wall, back_wall_normal); // back wall
+  this.ball.calculate_friction(this.g_acc); 
+
+  this.ball.update(dt);
 }
 
 //Simple Functions to adjust ball angle
@@ -207,32 +271,26 @@ update_velocity()
 
 angle_up()
 {
-  this.UDangle++;
-  this.update_velocity();
+  this.force.add_by(vec3(0, 5000, 0));
 }
 angle_down()
 {
-  this.UDangle--;
-  this.update_velocity();
+  this.force.add_by(vec3(0, -5000, 0));
 }
 angle_right()
 {
-  this.LRangle++;
-  this.update_velocity();
+  this.force.add_by(vec3(1000, 0, 0));
 }
 angle_left()
 {
-  this.LRangle--;
-  this.update_velocity();
+  this.force.add_by(vec3(-1000, 0, 0));
 }
 power_up()
 {
-  this.velocity++;
-  this.update_velocity();
+  this.force.add_by(vec3(0, 0, -1000));
 }
 power_down()
 {
-  this.velocity--;
-  this.update_velocity();
+  if (this.force[2] - 1000 <= 0) return;
 }
 }
