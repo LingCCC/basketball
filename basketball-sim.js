@@ -109,7 +109,7 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.top_rim = [0, 1, 2, 3, 4, 5]; 
 
         this.sim.create_spring((num_layers-1)*12); 
-        const ks = 11, kd = 25, len = 0; 
+        const ks = 11, kd = 25, len = 0; // still need to adjust these parameters a bit
         for(let i = 0; i < num_layers-1; i++) {
           if(i%2 === 0) { 
             for(let k = 0; k < 6; k++) {
@@ -289,11 +289,12 @@ export class Basketball_Sim extends Basketball_Sim_base
     this.shapes.box.draw( caller, this.uniforms, floor_transform, { ...this.materials.court } );
 
     //wall
-    let wall_transform = Mat4.translation(0, 5, -10).times(Mat4.scale(10, 5, 0.1));
+    const wall_height = 5; 
+    let wall_transform = Mat4.translation(0, wall_height, -10).times(Mat4.scale(10, wall_height, 0.1));
     this.shapes.box.draw( caller, this.uniforms, wall_transform, { ...this.materials.wall, color: wall_color } );
-    let left_wall_transform = Mat4.translation(-10, 5, 0).times(Mat4.scale(.1, 5, 10));
+    let left_wall_transform = Mat4.translation(-10, wall_height, 0).times(Mat4.scale(.1, wall_height, 10));
     this.shapes.box.draw( caller, this.uniforms, left_wall_transform, { ...this.materials.wall, color: wall_color } );
-    let right_wall_transform = Mat4.translation(10, 5, 0).times(Mat4.scale(.1, 5, 10));
+    let right_wall_transform = Mat4.translation(10, wall_height, 0).times(Mat4.scale(.1, wall_height, 10));
     this.shapes.box.draw( caller, this.uniforms, right_wall_transform, { ...this.materials.wall, color: wall_color } );
 
     let ceiling_transform = Mat4.translation(0, 10, 0).times(Mat4.scale(10, 0.1, 10));
