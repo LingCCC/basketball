@@ -68,8 +68,8 @@ class Ball {
         const blue = color(0, 0, 1, 1), red = color( 1, 0, 0, 1);
   
         const pos = this.pos;
-        let model_transform = Mat4.scale(0.2, 0.2, 0.2);
+        let model_transform = Mat4.scale(0.5, 0.5, 0.5);
         model_transform.pre_multiply(Mat4.translation(pos[0], pos[1], pos[2]));
-        shapes.ball.draw(webgl_manager, uniforms, model_transform, { ...materials.plastic, color: blue });
+        shapes.ball.draw(webgl_manager, uniforms, model_transform, { ...materials.ball});
     }
 }

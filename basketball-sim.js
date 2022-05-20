@@ -49,6 +49,7 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.materials.wall = {shader: tex_phong, ambient: .2, texture: new Texture( "assets/wall.jpg" )}
         this.materials.court = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/court.png" )}
         this.materials.backboard = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/backboard.jpg" )}
+        this.materials.ball = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/basketball.png" )}
 
 
         // TODO: you should create a Spline class instance
