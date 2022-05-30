@@ -3,6 +3,7 @@ import { Shape_From_File } from './examples/obj-file-demo.js'
 import { Ball } from './ball.js';
 import { Character } from './character.js';
 import { Simulation } from './mass-spring-damper.js';
+import { Curve_Shape } from './spline.js';
 
 // Pull these names into this module's scope for convenience:
 const { vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component } = tiny;
@@ -36,7 +37,8 @@ const Basketball_Sim_base = defs.Assignment2_base =
           'ring' : new defs.Cylindrical_Tube(20, 20, [1,2]),
           'wall' : new Shape_From_File('assets/Fence.obj'),
           'bench': new Shape_From_File('assets/Bench_HighRes.obj'),
-          'tree': new Shape_From_File('assets/Tree.obj')};
+          'curve': new Curve_Shape((t) => {vec3(0, 0, 0)}, 100, color(0, 0, 1, 1)),
+        };
 
         // *** Materials: ***  A "material" used on individual shapes specifies all fields
         // that a Shader queries to light/color it properly.  Here we use a Phong shader.
@@ -327,8 +329,6 @@ export class Basketball_Sim extends Basketball_Sim_base
                               .times(Mat4.scale(2, 2, 2));
     this.shapes.bench.draw(caller, this.uniforms, bench_transform_2, { ...this.materials.metal, color: color(.9, .9, .9, 1) })
 
-    this.shapes.tree.draw(caller, this.uniforms, Mat4.translation(0, 4, 0), {...this.materials.tree})
-
     //hoop
     let board_transform = Mat4.translation(0, 7.5, -9.8).times(Mat4.scale(2.25, 1.5, 0.2));
     this.shapes.box.draw( caller, this.uniforms, board_transform, { ...this.materials.backboard }  );
@@ -357,7 +357,7 @@ export class Basketball_Sim extends Basketball_Sim_base
       }
     }
 
-    this.ball.draw(caller, this.uniforms, this.shapes, this.materials);
+    this.ball.draw(caller, this.uniforms, this.shapes, this.materials, this.shoot, this.time_step, this.force);
     this.sim.draw(caller, this.uniforms, this.shapes, this.materials)
 
     // console.log("f: " + this.ball.ext_force);
@@ -404,7 +404,7 @@ reset() {
 update(dt) {
   const ground = vec3(0, 0, 0);
   const ground_normal = vec3(0, 1, 0);
-  const front_wall = vec3(0, 0, -10);
+  let front_wall = vec3(0, 0, -10);
   const front_wall_normal = vec3(0, 0, 1);
   const left_wall = vec3(-10, 0, 0);
   const left_wall_normal = vec3(1, 0, 0);
@@ -412,6 +412,15 @@ update(dt) {
   const right_wall_normal = vec3(-1, 0, 0);
   const back_wall = vec3(0, 0, 10);
   const back_wall_normal = vec3(0, 0, -1);
+
+  //see if ball lands in area of backboard 
+  if(this.ball.pos[1] >= 5 && this.ball.pos[1] <= 7.5 && this.ball.pos[0] >= -1.125 && this.ball.pos[0] <= 1.125) {
+    front_wall = vec3(0, 0, -9.8);
+  }
+  //see if ball lands in hoop stem/stand
+  if(this.ball.pos[1] >= 0 && this.ball.pos[1] <= 3 && this.ball.pos[0] >= -.1 && this.ball.pos[0] <= .1) {
+    front_wall = vec3(0, 0, -9.8);
+  }
 
   this.ball.ext_force = this.g_acc.times(this.ball.mass);
   this.ball.ext_force.add_by(this.force);
