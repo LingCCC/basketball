@@ -80,8 +80,11 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.sim_speed = 1.0;
         this.g_acc = vec3(0, -9.8, 0);
         this.force = vec3(0, 0, 0);
+        this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 
         this.init_hoop(); 
+
+        this.spline_length = 5000; 
       }
 
       init_hoop() {
@@ -371,26 +374,44 @@ render_controls()
 this.control_panel.innerHTML += "Assignment 2: IK Engine";
 this.new_line();
 // TODO: You can add your button events for debugging. (optional)
-this.key_triggered_button( "Debug", [ "Shift", "D" ], null );
-this.new_line();
 this.key_triggered_button( "Angle Up", ["I"], this.angle_up );
-this.new_line();
+//this.new_line();
 this.key_triggered_button( "Angle Right", ["L"], this.angle_right );
-this.new_line();
+//this.new_line();
 this.key_triggered_button( "Angle Down", ["K"], this.angle_down );
-this.new_line();
+//this.new_line();
 this.key_triggered_button( "Angle Left", ["J"], this.angle_left );
 this.new_line();
 this.key_triggered_button( "Inc Power", ["P"], this.power_up );
-this.new_line();
 this.key_triggered_button( "Dec Power", ["U"], this.power_down );
 this.new_line();
 this.key_triggered_button("Shoot", ["O"], () => {
   //this.running = !this.running;
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
   this.shoot = !this.shoot; 
 });
 this.new_line();
 this.key_triggered_button( "Reset", ["["], this.reset );
+this.new_line();
+// let difficulty =  "Easy"; 
+// if(this.spline_length === 2000)
+//   difficulty = "Medium"; 
+// if(this.spline_length === 2000)
+//   difficulty = "Hard"; 
+//this.control_panel.innerHTML += "Difficulty: " + difficulty;
+this.new_line();
+this.key_triggered_button( "Easy", ["E"], () => { 
+  this.spline_length = 5000; 
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+} );
+this.key_triggered_button( "Medium", ["M"], () => { 
+  this.spline_length = 2000; 
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+} );
+this.key_triggered_button( "Hard", ["H"], () => { 
+  this.spline_length = 1000;   
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+});
 this.new_line();
 }
 
@@ -399,10 +420,11 @@ reset() {
   this.ball.acc = vec3(0, 0, 0);
   this.ball.vel = vec3(0, 0, 0);
   this.ball.ext_force = vec3(0, 0, 0);
+  this.ball.update_arc(this.time_step, this.force); 
 }
 
 update(dt) {
-  const ground = vec3(0, 0, 0);
+  const ground = vec3(0, .5, 0);
   const ground_normal = vec3(0, 1, 0);
   let front_wall = vec3(0, 0, -10);
   const front_wall_normal = vec3(0, 0, 1);
@@ -447,25 +469,33 @@ update_velocity()
 angle_up()
 {
   this.force.add_by(vec3(0, 5000, 0));
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 }
 angle_down()
 {
   this.force.add_by(vec3(0, -5000, 0));
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 }
 angle_right()
 {
   this.force.add_by(vec3(1000, 0, 0));
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 }
 angle_left()
 {
   this.force.add_by(vec3(-1000, 0, 0));
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 }
 power_up()
 {
   this.force.add_by(vec3(0, 0, -1000));
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 }
 power_down()
 {
-  if (this.force[2] - 1000 <= 0) return;
+  if (this.force[2] - 1000 <= 0) {
+    this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+    return;
+  }
 }
 }

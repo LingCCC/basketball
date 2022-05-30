@@ -14,6 +14,7 @@ export class Ball {
     this.vel = vec3(0, 0, 0);
     this.acc = vec3(0, 0, 0);
     this.ext_force = vec3(0, 0, 0);
+    this.arc = null; 
   }
 
   calculate_force(surface_p, normal) {
@@ -97,7 +98,7 @@ export class Ball {
             this.did_collide(back_wall, back_wall_normal, pos);// back wall
   }
 
-  make_arc(dt, force) {
+  update_arc(dt, force, length) {
     let vel = this.vel.copy();
     let pos = this.pos.copy();
     let acc = this.pos.copy();
@@ -105,7 +106,7 @@ export class Ball {
     let h = new Hermite_Spline();
     let k = 0; 
 
-    while(k < 5000) { // upper bound to prevent infinite loops
+    while(k < length) { // upper bound to prevent infinite loops
         if (k % 100 === 0) {
             h.add_point(pos[0], pos[1], pos[2], vel[0], vel[1], vel[2]);
         }
@@ -119,7 +120,7 @@ export class Ball {
         ext_force = vec3(0, -9.8, 0);
         k++;
     }  
-    return h;
+    this.arc = h; 
   }
 
   draw(webgl_manager, uniforms, shapes, materials, running, dt, force) {
@@ -127,9 +128,9 @@ export class Ball {
 
     //draw shooting arc
     if (running === false) {
-      let spline = this.make_arc(dt, force);
+      //this.make_arc(dt, force);
       shapes.curve.update(webgl_manager, uniforms, (s) =>
-        spline.get_position(s)
+        this.arc.get_position(s)
       );
       shapes.curve.draw(webgl_manager, uniforms);
     }
