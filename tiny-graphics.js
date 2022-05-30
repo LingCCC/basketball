@@ -368,7 +368,7 @@ const Component = tiny.Component =
           for (const r of rules) document.styleSheets[ document.styleSheets.length - 1 ].insertRule (r, 0);
           Component.types_used_before.add (classType);
       }
-      make_context (canvas, background_color = color (0, 0, 0, 1), dimensions) {
+      make_context (canvas, background_color = color (220/255, 243/255, 247/255, 1), dimensions) {
           this.canvas              = canvas;
           const try_making_context = name => this.context = this.canvas.getContext (name);
           for (let name of ["webgl", "experimental-webgl", "webkit-3d", "moz-webgl"])
