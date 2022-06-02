@@ -99,6 +99,7 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.init_hoop(); 
 
         this.spline_length = 5000; 
+        this.difficulty = "Easy"
 
 
         //Scoring
@@ -312,7 +313,7 @@ export class Basketball_Sim extends Basketball_Sim_base
     }
 
     this.human.update(this.ball.pos, this.shoot);
-    this.human.draw(caller, this.uniforms, this.materials.plastic);
+    this.human.draw(caller, this.uniforms, {... this.materials.plastic, color: color(1, 1, 1, 1)});
     this.ball.draw(caller, this.uniforms, this.shapes, this.materials, this.shoot, this.time_step, this.force);
     this.sim.draw(caller, this.uniforms, this.shapes, this.materials)
 
@@ -352,7 +353,11 @@ render_controls()
 {
 // render_controls(): Sets up a panel of interactive HTML elements, including
 // buttons with key bindings for affecting this scene, and live info readouts.
-this.control_panel.innerHTML += "Assignment 2: IK Engine";
+this.live_string(box => {
+    box.textContent ="Difficulty: " + this.difficulty;
+});
+//this.control_panel.innerHTML += "Difficulty: " + difficulty;
+//this.control_panel.innerHTML += "Assignment 2: IK Engine";
 
 this.scoreText = this.control_panel.appendChild(document.createElement("div"));
 
@@ -377,23 +382,29 @@ this.key_triggered_button("Shoot", ["O"], () => {
 this.new_line();
 this.key_triggered_button( "Reset", ["["], this.reset );
 this.new_line();
-// let difficulty =  "Easy"; 
-// if(this.spline_length === 2000)
-//   difficulty = "Medium"; 
-// if(this.spline_length === 2000)
-//   difficulty = "Hard"; 
-//this.control_panel.innerHTML += "Difficulty: " + difficulty;
+// this.key_triggered_button( "Move Forward", ["W"], this.move_up );
+// //this.new_line();
+// this.key_triggered_button( "Move Right", ["D"], this.move_right );
+// //this.new_line();
+// this.key_triggered_button( "Move Backwards", ["S"], this.move_down );
+// //this.new_line();
+// this.key_triggered_button( "Move Left", ["A"], this.move_left );
+// this.new_line();
+
 this.new_line();
 this.key_triggered_button( "Easy", ["E"], () => { 
   this.spline_length = 5000; 
+  this.difficulty = "Easy"; 
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 } );
 this.key_triggered_button( "Medium", ["M"], () => { 
   this.spline_length = 2000; 
+  this.difficulty = "Medium"; 
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 } );
 this.key_triggered_button( "Hard", ["H"], () => { 
-  this.spline_length = 1000;   
+  this.spline_length = 1000; 
+  this.difficulty = "Hard";   
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 });
 this.new_line();
@@ -425,7 +436,7 @@ update(dt) {
     front_wall = vec3(0, 0, -9.8);
   }
   //see if ball lands in hoop stem/stand
-  if(this.ball.pos[1] >= 0 && this.ball.pos[1] <= 3 && this.ball.pos[0] >= -.1 && this.ball.pos[0] <= .1) {
+  if(this.ball.pos[1] >= 0 && this.ball.pos[1] <= 3 && this.ball.pos[0] >= -.2 && this.ball.pos[0] <= .2) {
     front_wall = vec3(0, 0, -9.8);
   }
   
@@ -483,5 +494,17 @@ power_down()
     this.ball.update_arc(this.time_step, this.force, this.spline_length); 
     return;
   }
+}
+move_up() {
+  this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(0, 0, -1)); 
+}
+move_down() {
+  this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(0, 0, 1)); 
+}
+move_left() {
+  this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(-1, 0, 0));
+}
+move_right() {
+  this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(1, 0, 0)); 
 }
 }
