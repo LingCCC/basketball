@@ -4,6 +4,7 @@ import { Ball } from './ball.js';
 import { Character } from './character.js';
 import { Simulation } from './mass-spring-damper.js';
 import { Curve_Shape } from './spline.js';
+import { Articulated_Human } from './human.js';
 
 // Pull these names into this module's scope for convenience:
 const { vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component } = tiny;
@@ -105,6 +106,7 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.reachHoop = false;
         this.reachNet = false;
 
+        this.human = new Articulated_Human();
       }
 
       init_hoop() {
@@ -380,6 +382,8 @@ export class Basketball_Sim extends Basketball_Sim_base
       }
     }
 
+    this.human.update(this.ball.pos, this.shoot);
+    this.human.draw(caller, this.uniforms, this.materials.plastic);
     this.ball.draw(caller, this.uniforms, this.shapes, this.materials, this.shoot, this.time_step, this.force);
     this.sim.draw(caller, this.uniforms, this.shapes, this.materials)
 
@@ -437,7 +441,7 @@ this.key_triggered_button( "Inc Power", ["P"], this.power_up );
 this.key_triggered_button( "Dec Power", ["U"], this.power_down );
 this.new_line();
 this.key_triggered_button("Shoot", ["O"], () => {
-  //this.running = !this.running;
+  // this.running = !this.running;
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
   this.shoot = !this.shoot; 
 });
@@ -467,12 +471,12 @@ this.new_line();
 }
 
 reset() {
-  this.ball.pos = vec3(0, 10, -9.8);
+  this.ball.pos = vec3(0, 3.5, 0);
   this.ball.acc = vec3(0, 0, 0);
   this.ball.vel = vec3(0, 0, 0);
   this.ball.ext_force = vec3(0, 0, 0);
-  this.running = false;
-  this.ball.update_arc(this.time_step, this.force); 
+  this.ball.update_arc(this.time_step, this.force);
+  this.shoot = false;
 }
 
 update(dt) {
