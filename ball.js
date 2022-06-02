@@ -10,7 +10,7 @@ export class Ball {
   constructor() {
     this.mass = 1; // kg
     this.radius = 0.037; // meter
-    this.pos = vec3(0, 0.5, 0);
+    this.pos = vec3(0, 3.5, 0);
     this.vel = vec3(0, 0, 0);
     this.acc = vec3(0, 0, 0);
     this.ext_force = vec3(0, 0, 0);
