@@ -55,11 +55,11 @@ const Spline =
       this.size += 1;
     }
 
-    set_point(index, x, y, z) {
-      this.points[index] = vec3(x, y, z);
+    set_point(index, x, y, z){
+      this.points[index] = vec3(x,y,z);
     }
 
-    set_tangent(index, tx, ty, tz) {
+    set_tangent(index, tx, ty, tz){
       this.tangents[index] = vec3(tx, ty, tz);
     }
 

@@ -7,6 +7,20 @@ import { Character } from './character.js';
 const { vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component } = tiny;
 
 // TODO: you should implement the required classes here or in another file.
+//Checks if current position is close to the intended destination
+function closeToDest(destination, position)
+{
+  let effPos = position;
+  let xDiff = Math.abs(effPos[0] - destination[0]);
+  let yDiff = Math.abs(effPos[1] - destination[1]);
+  let zDiff = Math.abs(effPos[2] - destination[2]);
+  if(xDiff < 0.1 && yDiff < 0.1 && zDiff < 0.1)
+  {
+    return true;
+  }
+  return false;
+}
+
 
 export
 const Basketball_Sim_base = defs.Assignment2_base =
@@ -71,6 +85,11 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.sim_speed = 1.0;
         this.g_acc = vec3(0, -9.8, 0);
         this.force = vec3(0, 0, 0);
+
+        //Scoring
+        this.score = 0;
+        this.reachHoop = false;
+        this.reachNet = false;
       }
 
       render_animation( caller )
@@ -196,6 +215,34 @@ export class Basketball_Sim extends Basketball_Sim_base
 
     this.ball.draw(caller, this.uniforms, this.shapes, this.materials);
 
+    //confirms ball reaches hoop and passes through net
+    if(closeToDest([0, 7.5, -9.8], this.ball.pos))
+    {
+      this.reachHoop = true;
+    }
+    if(this.reachHoop)
+    {
+      if(closeToDest([0, 6.0, -9.8], this.ball.pos))
+      {
+        this.reachNet = true;
+      }
+    }
+    if (this.reachNet)
+    {
+      this.score++;
+      this.reachHoop = false;
+      this.reachNet = false;
+      this.scoreText.textContent = "Score: " + this.score;
+    }
+
+    //Score Text and Styling
+    this.scoreText.style.position = "absolute";
+    this.scoreText.style.top = "15px";
+    this.scoreText.textContent = "Score: " + this.score;
+    this.scoreText.style.fontSize = "20px";
+    this.scoreText.style.fontWeight = "bold";
+    this.scoreText.style.color = "black";
+
     // console.log("f: " + this.ball.ext_force);
     // console.log("p: " + this.ball.ext_force);
 }
@@ -205,6 +252,9 @@ render_controls()
 // render_controls(): Sets up a panel of interactive HTML elements, including
 // buttons with key bindings for affecting this scene, and live info readouts.
 this.control_panel.innerHTML += "Assignment 2: IK Engine";
+
+this.scoreText = this.control_panel.appendChild(document.createElement("div"));
+
 this.new_line();
 // TODO: You can add your button events for debugging. (optional)
 this.key_triggered_button( "Debug", [ "Shift", "D" ], null );
@@ -230,7 +280,7 @@ this.new_line();
 }
 
 reset() {
-  this.ball.pos = vec3(0, 0, 0);
+  this.ball.pos = vec3(0, 10, -9.8);
   this.ball.acc = vec3(0, 0, 0);
   this.ball.vel = vec3(0, 0, 0);
   this.ball.ext_force = vec3(0, 0, 0);

@@ -14,12 +14,16 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectId" id="29GmQ45v0AjkuJYC7904MRaPsXv" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "C:/Users/micha/OneDrive/Desktop/cs174c-final-project",
+    "last_opened_file_path": "C:/Users/micha/OneDrive/Desktop/assignment1_template_tozip",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -32,6 +36,7 @@
       <option name="presentableId" value="Default" />
       <updated>1652747777047</updated>
       <workItem from="1652747778352" duration="2648000" />
+      <workItem from="1654125274400" duration="7570000" />
     </task>
     <servers />
   </component>

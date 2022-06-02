@@ -10,6 +10,7 @@ index.html - The web page document containing the canvas (drawing surface).  It 
 <!-- Begin typing your web page's text here. //-->
 
 <!-- The following code embeds a WebGL canvas panel powered by a tree of Components from tiny-graphics.  //-->
+
 <div id="main-section" class="document-builder"></div>
 <script type=module>
 // ********************* THE ENTRY POINT OF YOUR JAVASCRIPT PROGRAM STARTS HERE *********************
@@ -19,6 +20,7 @@ import {main_scene, additional_scenes} from './main-scene.js';
 const root = new main_scene ();                                                     // This line creates your scene.
 root.animated_children.push (...additional_scenes.map (scene => new scene ()));
 root.render_layout (element_to_replace);
+
 </script>
 
 </body>
