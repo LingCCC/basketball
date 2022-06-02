@@ -35,11 +35,11 @@ export class Ball {
 
   calculate_friction(g_acc) {
     const fn = g_acc.times(this.mass);
-    const mu_k = 0.1;
+    const mu_k = .1;
 
     let f_k = vec3(0, 0, 0);
     if (!this.vel.equals(f_k)) {
-      f_k = this.vel.normalized().times(fn.norm() * -1 * mu_k);
+      f_k = this.vel.times(fn.norm() * -1 * mu_k);
     }
 
     if (this.pos[1] > -0.1 && this.pos[1] < 0.1) {
