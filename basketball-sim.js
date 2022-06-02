@@ -2,6 +2,8 @@ import {tiny, defs} from './examples/common.js';
 import { Shape_From_File } from './examples/obj-file-demo.js'
 import { Ball } from './ball.js';
 import { Character } from './character.js';
+import { Simulation } from './mass-spring-damper.js';
+import { Curve_Shape } from './spline.js';
 
 // Pull these names into this module's scope for convenience:
 const { vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component } = tiny;
@@ -20,7 +22,6 @@ function closeToDest(destination, position)
   }
   return false;
 }
-
 
 export
 const Basketball_Sim_base = defs.Assignment2_base =
@@ -46,7 +47,11 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.shapes = { 'box'  : new defs.Cube(),
           'ball' : new defs.Subdivision_Sphere( 4 ),
           'axis' : new defs.Axis_Arrows(), 
-          'ring' : new defs.Cylindrical_Tube(20, 20, [1,2])};
+          'ring' : new defs.Cylindrical_Tube(20, 20, [1,2]),
+          'wall' : new Shape_From_File('assets/Fence.obj'),
+          'bench': new Shape_From_File('assets/Bench_HighRes.obj'),
+          'curve': new Curve_Shape((t) => {vec3(0, 0, 0)}, 100, color(0, 0, 1, 1)),
+        };
 
         // *** Materials: ***  A "material" used on individual shapes specifies all fields
         // that a Shader queries to light/color it properly.  Here we use a Phong shader.
@@ -60,10 +65,12 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.materials.metal   = { shader: phong, ambient: .2, diffusivity: 1, specularity:  1, color: color( .9,.5,.9,1 ) }
         this.materials.rgb = { shader: tex_phong, ambient: .5, texture: new Texture( "assets/rgb.jpg" ) }
         this.materials.wall2 = { shader: phong, ambient: .2, diffusivity: 1, specularity: .5, color: color( .9,.5,.9,1 ) }
-        this.materials.wall = {shader: tex_phong, ambient: .2, texture: new Texture( "assets/wall.jpg" )}
+        this.materials.wall = {shader: tex_phong, ambient: .2, texture: new Texture( "assets/Fence.jpg" )}
         this.materials.court = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/court.png" )}
         this.materials.backboard = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/backboard.jpg" )}
         this.materials.ball = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/basketball.png" )}
+        this.materials.pure_color = {shader: phong, ambient: 1, diffusivity: 0, specularity: 0, color: color(.9, .5, .9, 1)}
+        this.materials.gravel = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/road.png" )}
 
 
         // TODO: you should create a Spline class instance
@@ -80,16 +87,149 @@ const Basketball_Sim_base = defs.Assignment2_base =
 
         this.ball = new Ball();
         this.time_step = 0.001;
-        this.running = false;
+        this.running = true;
+        this.shoot = false; 
         this.t_sim = 0.0;
         this.sim_speed = 1.0;
         this.g_acc = vec3(0, -9.8, 0);
         this.force = vec3(0, 0, 0);
+        this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+
+        this.init_hoop(); 
+
+        this.spline_length = 5000; 
+
 
         //Scoring
         this.score = 0;
         this.reachHoop = false;
         this.reachNet = false;
+
+      }
+
+      init_hoop() {
+        this.sim = new Simulation(); 
+        this.sim.ground_ks = 0; 
+        this.sim.ground_kd = 0; 
+        this.sim.g_acc = vec3(0, -9.8, 0);
+
+        let num_layers = 5; 
+        this.sim.create_particles(num_layers * 6); 
+        for(let i = 0; i < num_layers; i++)  {
+          const y = 6.5-(.3*i); 
+          const mass = .3; 
+          if(i%2 === 0) { //even row
+            this.sim.set_particle((i*6) + 0, mass,    0, y, -8.1, 0, 0, 0); 
+            this.sim.set_particle((i*6) + 1, mass,  .59, y, -8.5, 0, 0, 0); 
+            this.sim.set_particle((i*6) + 2, mass,  .63, y, -9.1, 0, 0, 0); 
+            this.sim.set_particle((i*6) + 3, mass,    0, y, -9.5, 0, 0, 0); 
+            this.sim.set_particle((i*6) + 4, mass, -.63, y, -9.1, 0, 0, 0); 
+            this.sim.set_particle((i*6) + 5, mass, -.59, y, -8.5,0, 0, 0);
+          } else { //odd row
+            this.sim.set_particle((i*6) + 0, mass,   .4, y, -8.25, 0, 0, 0); 
+            this.sim.set_particle((i*6) + 1, mass,  .68, y,  -8.8, 0, 0, 0); 
+            this.sim.set_particle((i*6) + 2, mass,   .4, y,  -9.4, 0, 0, 0); 
+            this.sim.set_particle((i*6) + 3, mass,  -.4, y,  -9.4, 0, 0, 0); 
+            this.sim.set_particle((i*6) + 4, mass, -.68, y,  -8.8, 0, 0, 0); 
+            this.sim.set_particle((i*6) + 5, mass,  -.4, y, -8.25, 0, 0, 0); 
+          }
+        }
+
+        this.top_rim = [0, 1, 2, 3, 4, 5]; 
+
+        this.sim.create_spring((num_layers-1)*12); 
+        const ks = 11, kd = 25, len = 0; // still need to adjust these parameters a bit
+        for(let i = 0; i < num_layers-1; i++) {
+          if(i%2 === 0) { 
+            for(let k = 0; k < 6; k++) {
+              const p1 = ((i*6) + k+1) >= (6*(i+1)) ? 6*i   : ((i*6) + k+1);
+              this.sim.set_spring(    (i*12)+(2*k), ((i*6) + k), ((i+1)*6) + k, ks, kd, len); 
+              this.sim.set_spring((i*12)+((2*k)+1),          p1, ((i+1)*6) + k, ks, kd, len); 
+            }
+          }
+          else {
+            for(let k = 0; k < 6; k++) {
+              const p2 = ((6*(i+1)) + k+1) >= (6*(i+2)) ? (6*(i+1)) : ((6*(i+1)) + k+1); 
+              this.sim.set_spring(    (i*12)+(2*k), (6*i)+k, (6*(i+1)) + k, ks, kd, len); 
+              this.sim.set_spring((i*12)+((2*k)+1), (6*i)+k,            p2, ks, kd, len); 
+            }
+          }
+        }
+
+        for(let i = 0; i < 10000; i++) {
+          this.sim.special_update(this.time_step, this.top_rim); 
+        }
+        // this.sim.create_particles(24); 
+        // //top layer
+        // this.sim.set_particle(0, .5, 0, 6.5, -8.1, 0, 0, 0); 
+        // this.sim.set_particle(1, .5, .59, 6.5, -8.5, 0, 0, 0); 
+        // this.sim.set_particle(2, .5, .63, 6.5, -9.1, 0, 0, 0); 
+        // this.sim.set_particle(3, .5, 0, 6.5, -9.5, 0, 0, 0); 
+        // this.sim.set_particle(4, .5, -.63, 6.5, -9.1, 0, 0, 0); 
+        // this.sim.set_particle(5, .5, -.59, 6.5, -8.5,0, 0, 0); 
+        // //layer 2 
+        // this.sim.set_particle(6, .5, .4, 6.2, -8.25, 0, 0, 0); 
+        // this.sim.set_particle(7, .5, .68, 6.2, -8.8, 0, 0, 0); 
+        // this.sim.set_particle(8, .5, .4, 6.2, -9.4, 0, 0, 0); 
+        // this.sim.set_particle(9, .5, -.4, 6.2, -9.4, 0, 0, 0); 
+        // this.sim.set_particle(10, .5, -.68, 6.2, -8.8, 0, 0, 0); 
+        // this.sim.set_particle(11, .5, -.4, 6.2, -8.25,0, 0, 0); 
+        // //layer 3
+        // this.sim.set_particle(12, .5, 0, 5.9, -8.1, 0, 0, 0); 
+        // this.sim.set_particle(13, .5, .59, 5.9, -8.5, 0, 0, 0); 
+        // this.sim.set_particle(14, .5, .63, 5.9, -9.1, 0, 0, 0); 
+        // this.sim.set_particle(15, .5, 0, 5.9, -9.5, 0, 0, 0); 
+        // this.sim.set_particle(16, .5, -.63, 5.9, -9.1, 0, 0, 0); 
+        // this.sim.set_particle(17, .5, -.59, 5.9, -8.5,0, 0, 0); 
+        // //layer 4
+        // this.sim.set_particle(18, .5, .4, 5.6, -8.25, 0, 0, 0); 
+        // this.sim.set_particle(19, .5, .68, 5.6, -8.8, 0, 0, 0); 
+        // this.sim.set_particle(20, .5, .4, 5.6, -9.4, 0, 0, 0); 
+        // this.sim.set_particle(21, .5, -.4, 5.6, -9.4, 0, 0, 0); 
+        // this.sim.set_particle(22, .5, -.68, 5.6, -8.8, 0, 0, 0); 
+        // this.sim.set_particle(23, .5, -.4, 5.6, -8.25, 0, 0, 0); 
+
+
+        // this.sim.create_spring(36); 
+        // //layer 1 to 2
+        // this.sim.set_spring(0, 0, 6, 10, 5, 0); 
+        // this.sim.set_spring(1, 1, 6, 10, 5, 0); 
+        // this.sim.set_spring(2, 1, 7, 10, 5, 0); 
+        // this.sim.set_spring(3, 2, 7, 10, 5, 0); 
+        // this.sim.set_spring(4, 2, 8, 10, 5, 0); 
+        // this.sim.set_spring(5, 3, 8, 10, 5, 0); 
+        // this.sim.set_spring(6, 3, 9, 10, 5, 0); 
+        // this.sim.set_spring(7, 4, 9, 10, 5, 0); 
+        // this.sim.set_spring(8, 4, 10, 10, 5, 0); 
+        // this.sim.set_spring(9, 5, 10, 10, 5, 0); 
+        // this.sim.set_spring(10, 5, 11, 10, 5, 0); 
+        // this.sim.set_spring(11, 0, 11, 10, 5, 0); 
+        // //layer 2 to 3
+        // this.sim.set_spring(23, 6, 12, 10, 5, 0);
+        // this.sim.set_spring(12, 6, 13, 10, 5, 0); 
+        // this.sim.set_spring(13, 7, 13, 10, 5, 0); 
+        // this.sim.set_spring(14, 7, 14, 10, 5, 0); 
+        // this.sim.set_spring(15, 8, 14, 10, 5, 0); 
+        // this.sim.set_spring(16, 8, 15, 10, 5, 0); 
+        // this.sim.set_spring(17, 9, 15, 10, 5, 0); 
+        // this.sim.set_spring(18, 9, 16, 10, 5, 0); 
+        // this.sim.set_spring(19, 10, 16, 10, 5, 0); 
+        // this.sim.set_spring(20, 10, 17, 10, 5, 0); 
+        // this.sim.set_spring(21, 11, 17, 10, 5, 0); 
+        // this.sim.set_spring(22, 11, 12, 10, 5, 0); 
+        // //layer 3 to 4 
+        // this.sim.set_spring(24, 12, 18, 10, 5, 0); 
+        // this.sim.set_spring(25, 13, 18, 10, 5, 0); 
+        // this.sim.set_spring(26, 13, 19, 10, 5, 0); 
+        // this.sim.set_spring(27, 14, 19, 10, 5, 0); 
+        // this.sim.set_spring(28, 14, 20, 10, 5, 0); 
+        // this.sim.set_spring(29, 15, 20, 10, 5, 0); 
+        // this.sim.set_spring(30, 15, 21, 10, 5, 0); 
+        // this.sim.set_spring(31, 16, 21, 10, 5, 0); 
+        // this.sim.set_spring(32, 16, 22, 10, 5, 0); 
+        // this.sim.set_spring(33, 17, 22, 10, 5, 0); 
+        // this.sim.set_spring(34, 17, 23, 10, 5, 0); 
+        // this.sim.set_spring(35, 12, 23, 10, 5, 0); 
       }
 
       render_animation( caller )
@@ -174,19 +314,43 @@ export class Basketball_Sim extends Basketball_Sim_base
     const t = this.t = this.uniforms.animation_time/1000;
 
     //court
-    let floor_transform = Mat4.translation(0, 0, 0).times(Mat4.scale(10, 0.01, 10));
-    this.shapes.box.draw( caller, this.uniforms, floor_transform, { ...this.materials.court } );
+    let court_transform = Mat4.translation(0, 0, 0).times(Mat4.scale(10, 0.01, 10));
+    this.shapes.box.draw( caller, this.uniforms, court_transform, { ...this.materials.court } );
 
     //wall
-    let wall_transform = Mat4.translation(0, 5, -10).times(Mat4.scale(10, 5, 0.1));
-    this.shapes.box.draw( caller, this.uniforms, wall_transform, { ...this.materials.wall, color: wall_color } );
-    let left_wall_transform = Mat4.translation(-10, 5, 0).times(Mat4.scale(.1, 5, 10));
-    this.shapes.box.draw( caller, this.uniforms, left_wall_transform, { ...this.materials.wall, color: wall_color } );
-    let right_wall_transform = Mat4.translation(10, 5, 0).times(Mat4.scale(.1, 5, 10));
-    this.shapes.box.draw( caller, this.uniforms, right_wall_transform, { ...this.materials.wall, color: wall_color } );
+    const wall_height = 5; 
+    // let wall_transform = Mat4.translation(0, wall_height, -10).times(Mat4.scale(10, wall_height, 0.1));
+    // this.shapes.box.draw( caller, this.uniforms, wall_transform, { ...this.materials.wall, color: wall_color } );
+    // let left_wall_transform = Mat4.translation(-10, wall_height, 0).times(Mat4.scale(.1, wall_height, 10));
+    // this.shapes.box.draw( caller, this.uniforms, left_wall_transform, { ...this.materials.wall, color: wall_color } );
+    // let right_wall_transform = Mat4.translation(10, wall_height, 0).times(Mat4.scale(.1, wall_height, 10));
+    // this.shapes.box.draw( caller, this.uniforms, right_wall_transform, { ...this.materials.wall, color: wall_color } );
 
-    let ceiling_transform = Mat4.translation(0, 10, 0).times(Mat4.scale(10, 0.1, 10));
-    //this.shapes.box.draw( caller, this.uniforms, ceiling_transform, { ...this.materials.wall, color: wall_color }  );
+    //fence
+    let wall_transform = Mat4.translation(0, 5.5, -10).times(Mat4.scale(5.7, 6, 1));
+    this.shapes.wall.draw( caller, this.uniforms, wall_transform, { ...this.materials.wall, color: wall_color } );
+    let left_wall_transform = Mat4.translation(-10, 5.5, 0)
+                                  .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
+                                  .times(Mat4.scale(5.7, 6, 1));
+    this.shapes.wall.draw( caller, this.uniforms, left_wall_transform, { ...this.materials.wall, color: wall_color } );
+    let right_wall_transform = Mat4.translation(10, 5.5, 0)
+                                   .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
+                                   .times(Mat4.scale(5.7, 6, 1));
+    this.shapes.wall.draw( caller, this.uniforms, right_wall_transform, { ...this.materials.wall, color: wall_color } );
+
+    //larger floor
+    let floor_transform = Mat4.translation(0, -.05, 0).times(Mat4.scale(100, 0.01, 100));
+    this.shapes.box.draw( caller, this.uniforms, floor_transform, { ...this.materials.plastic, color: color(117/255, 95/255, 84/255, 1) } );
+
+    //bench
+    let bench_transform_1 = Mat4.translation(-12, 1, 3)
+                              .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
+                              .times(Mat4.scale(2, 2, 2));
+    this.shapes.bench.draw(caller, this.uniforms, bench_transform_1, { ...this.materials.metal, color: color(.9, .9, .9, 1) });
+    let bench_transform_2 = Mat4.translation(-12, 1, -3)
+                              .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
+                              .times(Mat4.scale(2, 2, 2));
+    this.shapes.bench.draw(caller, this.uniforms, bench_transform_2, { ...this.materials.metal, color: color(.9, .9, .9, 1) })
 
     //hoop
     let board_transform = Mat4.translation(0, 7.5, -9.8).times(Mat4.scale(2.25, 1.5, 0.2));
@@ -208,12 +372,19 @@ export class Basketball_Sim extends Basketball_Sim_base
     if (this.running) {
       const t_next = this.t_sim + dt;
       while (this.t_sim < t_next) {
-        this.update(this.time_step);
+        if(this.shoot) {
+          this.update(this.time_step);
+        }
+        this.sim.special_update(this.time_step, this.top_rim); 
         this.t_sim += this.time_step;
       }
     }
 
-    this.ball.draw(caller, this.uniforms, this.shapes, this.materials);
+    this.ball.draw(caller, this.uniforms, this.shapes, this.materials, this.shoot, this.time_step, this.force);
+    this.sim.draw(caller, this.uniforms, this.shapes, this.materials)
+
+    // console.log("f: " + this.ball.ext_force);
+    // console.log("p: " + this.ball.ext_force);
 
     //confirms ball reaches hoop and passes through net
     if(closeToDest([0, 7.5, -9.8], this.ball.pos))
@@ -242,9 +413,6 @@ export class Basketball_Sim extends Basketball_Sim_base
     this.scoreText.style.fontSize = "20px";
     this.scoreText.style.fontWeight = "bold";
     this.scoreText.style.color = "black";
-
-    // console.log("f: " + this.ball.ext_force);
-    // console.log("p: " + this.ball.ext_force);
 }
 
 render_controls()
@@ -257,25 +425,44 @@ this.scoreText = this.control_panel.appendChild(document.createElement("div"));
 
 this.new_line();
 // TODO: You can add your button events for debugging. (optional)
-this.key_triggered_button( "Debug", [ "Shift", "D" ], null );
-this.new_line();
 this.key_triggered_button( "Angle Up", ["I"], this.angle_up );
-this.new_line();
+//this.new_line();
 this.key_triggered_button( "Angle Right", ["L"], this.angle_right );
-this.new_line();
+//this.new_line();
 this.key_triggered_button( "Angle Down", ["K"], this.angle_down );
-this.new_line();
+//this.new_line();
 this.key_triggered_button( "Angle Left", ["J"], this.angle_left );
 this.new_line();
 this.key_triggered_button( "Inc Power", ["P"], this.power_up );
-this.new_line();
 this.key_triggered_button( "Dec Power", ["U"], this.power_down );
 this.new_line();
 this.key_triggered_button("Shoot", ["O"], () => {
-  this.running = true;
+  //this.running = !this.running;
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+  this.shoot = !this.shoot; 
 });
 this.new_line();
 this.key_triggered_button( "Reset", ["["], this.reset );
+this.new_line();
+// let difficulty =  "Easy"; 
+// if(this.spline_length === 2000)
+//   difficulty = "Medium"; 
+// if(this.spline_length === 2000)
+//   difficulty = "Hard"; 
+//this.control_panel.innerHTML += "Difficulty: " + difficulty;
+this.new_line();
+this.key_triggered_button( "Easy", ["E"], () => { 
+  this.spline_length = 5000; 
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+} );
+this.key_triggered_button( "Medium", ["M"], () => { 
+  this.spline_length = 2000; 
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+} );
+this.key_triggered_button( "Hard", ["H"], () => { 
+  this.spline_length = 1000;   
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+});
 this.new_line();
 }
 
@@ -285,12 +472,13 @@ reset() {
   this.ball.vel = vec3(0, 0, 0);
   this.ball.ext_force = vec3(0, 0, 0);
   this.running = false;
+  this.ball.update_arc(this.time_step, this.force); 
 }
 
 update(dt) {
-  const ground = vec3(0, 0, 0);
+  const ground = vec3(0, .5, 0);
   const ground_normal = vec3(0, 1, 0);
-  const front_wall = vec3(0, 0, -10);
+  let front_wall = vec3(0, 0, -10);
   const front_wall_normal = vec3(0, 0, 1);
   const left_wall = vec3(-10, 0, 0);
   const left_wall_normal = vec3(1, 0, 0);
@@ -298,6 +486,15 @@ update(dt) {
   const right_wall_normal = vec3(-1, 0, 0);
   const back_wall = vec3(0, 0, 10);
   const back_wall_normal = vec3(0, 0, -1);
+
+  //see if ball lands in area of backboard 
+  if(this.ball.pos[1] >= 5 && this.ball.pos[1] <= 7.5 && this.ball.pos[0] >= -1.125 && this.ball.pos[0] <= 1.125) {
+    front_wall = vec3(0, 0, -9.8);
+  }
+  //see if ball lands in hoop stem/stand
+  if(this.ball.pos[1] >= 0 && this.ball.pos[1] <= 3 && this.ball.pos[0] >= -.1 && this.ball.pos[0] <= .1) {
+    front_wall = vec3(0, 0, -9.8);
+  }
 
   this.ball.ext_force = this.g_acc.times(this.ball.mass);
   this.ball.ext_force.add_by(this.force);
@@ -324,25 +521,33 @@ update_velocity()
 angle_up()
 {
   this.force.add_by(vec3(0, 5000, 0));
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 }
 angle_down()
 {
   this.force.add_by(vec3(0, -5000, 0));
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 }
 angle_right()
 {
   this.force.add_by(vec3(1000, 0, 0));
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 }
 angle_left()
 {
   this.force.add_by(vec3(-1000, 0, 0));
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 }
 power_up()
 {
   this.force.add_by(vec3(0, 0, -1000));
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 }
 power_down()
 {
-  if (this.force[2] - 1000 <= 0) return;
+  if (this.force[2] - 1000 <= 0) {
+    this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+    return;
+  }
 }
 }
