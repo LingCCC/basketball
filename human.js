@@ -18,18 +18,26 @@ class Articulated_Human {
 
         // TA code
         // torso node
-        const torso_transform = Mat4.scale(1, 2.5, 0.5);
+        const torso_transform = Mat4.scale(.8, 1.5, 0.7);
         this.torso_node = new Node("torso", sphere_shape, torso_transform);
         // root->torso
-        const root_location = Mat4.translation(0, 2.5, 2);
+        const root_location = Mat4.translation(0, 3.5, 2);
         this.root = new Arc("root", null, this.torso_node, root_location);
+
+        let head_transform = Mat4.scale(0.7, 0.7, 0.7);
+        head_transform.pre_multiply(Mat4.translation(0, 0.7, 0));
+        this.head_node = new Node("head", sphere_shape, head_transform);
+
+        const neck_loc = Mat4.translation(0, 1.5, 0);
+        this.neck = new Arc("neck", this.torso_node, this.head_node, neck_loc);
+        this.torso_node.children_arcs.push(this.neck);
 
         // right upper arm node
         let ru_arm_transform = Mat4.scale(1.2, .2, .2);
         ru_arm_transform.pre_multiply(Mat4.translation(1.2, 0, 0));
         this.ru_arm_node = new Node("ru_arm", sphere_shape, ru_arm_transform);
         // torso->r_shoulder->ru_arm
-        const r_shoulder_location = Mat4.translation(0.6, 2, 0);
+        const r_shoulder_location = Mat4.translation(0.6, 1.1, 0);
         this.r_shoulder = new Arc("r_shoulder", this.torso_node, this.ru_arm_node, r_shoulder_location);
         this.torso_node.children_arcs.push(this.r_shoulder);
 
@@ -56,7 +64,7 @@ class Articulated_Human {
         lu_arm_transform.pre_multiply(Mat4.translation(-1.2, 0, 0));
         this.lu_arm_node = new Node("lu_arm", sphere_shape, lu_arm_transform);
         // torso->l_shoulder->lu_arm
-        const l_shoulder_location = Mat4.translation(-0.6, 2, 0);
+        const l_shoulder_location = Mat4.translation(-0.6, 1.1, 0);
         this.l_shoulder = new Arc("l_shoulder", this.torso_node, this.lu_arm_node, l_shoulder_location);
         this.torso_node.children_arcs.push(this.l_shoulder);
 
@@ -78,6 +86,9 @@ class Articulated_Human {
         this.l_wrist = new Arc("l_wrist", this.ll_arm_node, this.l_hand_node, l_wrist_location);
         this.ll_arm_node.children_arcs.push(this.l_wrist);
 
+        this.init_left_leg(); 
+        this.init_right_leg(); 
+
         // degree of freedom 
         this.theta1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         this.theta2 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -86,6 +97,48 @@ class Articulated_Human {
         this.r_end_effector_pos = this.get_current_r_end_effector_pos();
         this.l_end_effector_pos = this.get_current_l_end_effector_pos();
     }
+
+    init_right_leg() {
+        const sphere_shape = shapes.sphere;
+        //upper leg
+        let ru_leg_transform = Mat4.scale(0.3, 1, 0.3); 
+        ru_leg_transform.pre_multiply(Mat4.translation(0, -.5, 0)); 
+        this.ru_leg_node = new Node("ru_leg", sphere_shape, ru_leg_transform);
+        
+        const r_hip_loc = Mat4.translation(0.4, -1.75, 0);
+        this.r_hip = new Arc("r_hip", this.torso_node, this.ru_leg_node, r_hip_loc);
+        this.torso_node.children_arcs.push(this.r_hip);
+    
+        //foot
+        let r_foot_transform = Mat4.scale(0.3, 0.2, 0.4);
+        r_foot_transform.pre_multiply(Mat4.translation(0, -.2, 0)); 
+        this.r_foot_node = new Node("r_foot", sphere_shape, r_foot_transform);
+            
+        const r_ankle_loc = Mat4.translation(0, -1.4, 0);
+        this.r_ankle = new Arc("r_ankle", this.rl_leg_node, this.r_foot_node, r_ankle_loc);
+        this.ru_leg_node.children_arcs.push(this.r_ankle);
+      }
+    
+      init_left_leg() {
+        const sphere_shape = shapes.sphere;
+        //upper leg
+        let lu_leg_transform = Mat4.scale(0.3, 1, 0.3); 
+        lu_leg_transform.pre_multiply(Mat4.translation(0, -.5, 0)); 
+        this.lu_leg_node = new Node("lu_leg", sphere_shape, lu_leg_transform);
+        
+        const l_hip_loc = Mat4.translation(-0.4, -1.75, 0);
+        this.l_hip = new Arc("r_hip", this.torso_node, this.lu_leg_node, l_hip_loc);
+        this.torso_node.children_arcs.push(this.l_hip);
+    
+        //foot
+        let l_foot_transform = Mat4.scale(0.3, 0.2, 0.4);
+        l_foot_transform.pre_multiply(Mat4.translation(0, -.2, 0)); 
+        this.l_foot_node = new Node("l_foot", sphere_shape, l_foot_transform);
+            
+        const l_ankle_loc = Mat4.translation(0, -1.4, 0);
+        this.l_ankle = new Arc("l_ankle", this.ll_leg_node, this.l_foot_node, l_ankle_loc);
+        this.lu_leg_node.children_arcs.push(this.l_ankle);
+      }
 
     update(goal, is_shoot) {
         this.update_right(goal, is_shoot);
@@ -182,7 +235,7 @@ class Articulated_Human {
 
             const dtheta = math.multiply(j_inv, dx); // new dof based on the new position
 
-            console.log(j)
+            //console.log(j)
 
             this.update_left_theta(dtheta);
             this.update_articulation(); // update articulated matrices

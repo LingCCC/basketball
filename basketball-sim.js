@@ -11,13 +11,13 @@ const { vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component } =
 
 // TODO: you should implement the required classes here or in another file.
 //Checks if current position is close to the intended destination
-function closeToDest(destination, position)
+function closeToDest(destination, position, std=0.1)
 {
   let effPos = position;
   let xDiff = Math.abs(effPos[0] - destination[0]);
   let yDiff = Math.abs(effPos[1] - destination[1]);
   let zDiff = Math.abs(effPos[2] - destination[2]);
-  if(xDiff < 0.1 && yDiff < 0.1 && zDiff < 0.1)
+  if(xDiff < std && yDiff < std && zDiff < std)
   {
     return true;
   }
@@ -99,6 +99,7 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.init_hoop(); 
 
         this.spline_length = 5000; 
+        this.difficulty = "Easy"
 
 
         //Scoring
@@ -161,77 +162,6 @@ const Basketball_Sim_base = defs.Assignment2_base =
         for(let i = 0; i < 10000; i++) {
           this.sim.special_update(this.time_step, this.top_rim); 
         }
-        // this.sim.create_particles(24); 
-        // //top layer
-        // this.sim.set_particle(0, .5, 0, 6.5, -8.1, 0, 0, 0); 
-        // this.sim.set_particle(1, .5, .59, 6.5, -8.5, 0, 0, 0); 
-        // this.sim.set_particle(2, .5, .63, 6.5, -9.1, 0, 0, 0); 
-        // this.sim.set_particle(3, .5, 0, 6.5, -9.5, 0, 0, 0); 
-        // this.sim.set_particle(4, .5, -.63, 6.5, -9.1, 0, 0, 0); 
-        // this.sim.set_particle(5, .5, -.59, 6.5, -8.5,0, 0, 0); 
-        // //layer 2 
-        // this.sim.set_particle(6, .5, .4, 6.2, -8.25, 0, 0, 0); 
-        // this.sim.set_particle(7, .5, .68, 6.2, -8.8, 0, 0, 0); 
-        // this.sim.set_particle(8, .5, .4, 6.2, -9.4, 0, 0, 0); 
-        // this.sim.set_particle(9, .5, -.4, 6.2, -9.4, 0, 0, 0); 
-        // this.sim.set_particle(10, .5, -.68, 6.2, -8.8, 0, 0, 0); 
-        // this.sim.set_particle(11, .5, -.4, 6.2, -8.25,0, 0, 0); 
-        // //layer 3
-        // this.sim.set_particle(12, .5, 0, 5.9, -8.1, 0, 0, 0); 
-        // this.sim.set_particle(13, .5, .59, 5.9, -8.5, 0, 0, 0); 
-        // this.sim.set_particle(14, .5, .63, 5.9, -9.1, 0, 0, 0); 
-        // this.sim.set_particle(15, .5, 0, 5.9, -9.5, 0, 0, 0); 
-        // this.sim.set_particle(16, .5, -.63, 5.9, -9.1, 0, 0, 0); 
-        // this.sim.set_particle(17, .5, -.59, 5.9, -8.5,0, 0, 0); 
-        // //layer 4
-        // this.sim.set_particle(18, .5, .4, 5.6, -8.25, 0, 0, 0); 
-        // this.sim.set_particle(19, .5, .68, 5.6, -8.8, 0, 0, 0); 
-        // this.sim.set_particle(20, .5, .4, 5.6, -9.4, 0, 0, 0); 
-        // this.sim.set_particle(21, .5, -.4, 5.6, -9.4, 0, 0, 0); 
-        // this.sim.set_particle(22, .5, -.68, 5.6, -8.8, 0, 0, 0); 
-        // this.sim.set_particle(23, .5, -.4, 5.6, -8.25, 0, 0, 0); 
-
-
-        // this.sim.create_spring(36); 
-        // //layer 1 to 2
-        // this.sim.set_spring(0, 0, 6, 10, 5, 0); 
-        // this.sim.set_spring(1, 1, 6, 10, 5, 0); 
-        // this.sim.set_spring(2, 1, 7, 10, 5, 0); 
-        // this.sim.set_spring(3, 2, 7, 10, 5, 0); 
-        // this.sim.set_spring(4, 2, 8, 10, 5, 0); 
-        // this.sim.set_spring(5, 3, 8, 10, 5, 0); 
-        // this.sim.set_spring(6, 3, 9, 10, 5, 0); 
-        // this.sim.set_spring(7, 4, 9, 10, 5, 0); 
-        // this.sim.set_spring(8, 4, 10, 10, 5, 0); 
-        // this.sim.set_spring(9, 5, 10, 10, 5, 0); 
-        // this.sim.set_spring(10, 5, 11, 10, 5, 0); 
-        // this.sim.set_spring(11, 0, 11, 10, 5, 0); 
-        // //layer 2 to 3
-        // this.sim.set_spring(23, 6, 12, 10, 5, 0);
-        // this.sim.set_spring(12, 6, 13, 10, 5, 0); 
-        // this.sim.set_spring(13, 7, 13, 10, 5, 0); 
-        // this.sim.set_spring(14, 7, 14, 10, 5, 0); 
-        // this.sim.set_spring(15, 8, 14, 10, 5, 0); 
-        // this.sim.set_spring(16, 8, 15, 10, 5, 0); 
-        // this.sim.set_spring(17, 9, 15, 10, 5, 0); 
-        // this.sim.set_spring(18, 9, 16, 10, 5, 0); 
-        // this.sim.set_spring(19, 10, 16, 10, 5, 0); 
-        // this.sim.set_spring(20, 10, 17, 10, 5, 0); 
-        // this.sim.set_spring(21, 11, 17, 10, 5, 0); 
-        // this.sim.set_spring(22, 11, 12, 10, 5, 0); 
-        // //layer 3 to 4 
-        // this.sim.set_spring(24, 12, 18, 10, 5, 0); 
-        // this.sim.set_spring(25, 13, 18, 10, 5, 0); 
-        // this.sim.set_spring(26, 13, 19, 10, 5, 0); 
-        // this.sim.set_spring(27, 14, 19, 10, 5, 0); 
-        // this.sim.set_spring(28, 14, 20, 10, 5, 0); 
-        // this.sim.set_spring(29, 15, 20, 10, 5, 0); 
-        // this.sim.set_spring(30, 15, 21, 10, 5, 0); 
-        // this.sim.set_spring(31, 16, 21, 10, 5, 0); 
-        // this.sim.set_spring(32, 16, 22, 10, 5, 0); 
-        // this.sim.set_spring(33, 17, 22, 10, 5, 0); 
-        // this.sim.set_spring(34, 17, 23, 10, 5, 0); 
-        // this.sim.set_spring(35, 12, 23, 10, 5, 0); 
       }
 
       render_animation( caller )
@@ -383,7 +313,7 @@ export class Basketball_Sim extends Basketball_Sim_base
     }
 
     this.human.update(this.ball.pos, this.shoot);
-    this.human.draw(caller, this.uniforms, this.materials.plastic);
+    this.human.draw(caller, this.uniforms, {... this.materials.plastic, color: color(1, 1, 1, 1)});
     this.ball.draw(caller, this.uniforms, this.shapes, this.materials, this.shoot, this.time_step, this.force);
     this.sim.draw(caller, this.uniforms, this.shapes, this.materials)
 
@@ -423,7 +353,11 @@ render_controls()
 {
 // render_controls(): Sets up a panel of interactive HTML elements, including
 // buttons with key bindings for affecting this scene, and live info readouts.
-this.control_panel.innerHTML += "Assignment 2: IK Engine";
+this.live_string(box => {
+    box.textContent ="Difficulty: " + this.difficulty;
+});
+//this.control_panel.innerHTML += "Difficulty: " + difficulty;
+//this.control_panel.innerHTML += "Assignment 2: IK Engine";
 
 this.scoreText = this.control_panel.appendChild(document.createElement("div"));
 
@@ -448,23 +382,29 @@ this.key_triggered_button("Shoot", ["O"], () => {
 this.new_line();
 this.key_triggered_button( "Reset", ["["], this.reset );
 this.new_line();
-// let difficulty =  "Easy"; 
-// if(this.spline_length === 2000)
-//   difficulty = "Medium"; 
-// if(this.spline_length === 2000)
-//   difficulty = "Hard"; 
-//this.control_panel.innerHTML += "Difficulty: " + difficulty;
+// this.key_triggered_button( "Move Forward", ["W"], this.move_up );
+// //this.new_line();
+// this.key_triggered_button( "Move Right", ["D"], this.move_right );
+// //this.new_line();
+// this.key_triggered_button( "Move Backwards", ["S"], this.move_down );
+// //this.new_line();
+// this.key_triggered_button( "Move Left", ["A"], this.move_left );
+// this.new_line();
+
 this.new_line();
 this.key_triggered_button( "Easy", ["E"], () => { 
   this.spline_length = 5000; 
+  this.difficulty = "Easy"; 
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 } );
 this.key_triggered_button( "Medium", ["M"], () => { 
   this.spline_length = 2000; 
+  this.difficulty = "Medium"; 
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 } );
 this.key_triggered_button( "Hard", ["H"], () => { 
-  this.spline_length = 1000;   
+  this.spline_length = 1000; 
+  this.difficulty = "Hard";   
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 });
 this.new_line();
@@ -496,10 +436,10 @@ update(dt) {
     front_wall = vec3(0, 0, -9.8);
   }
   //see if ball lands in hoop stem/stand
-  if(this.ball.pos[1] >= 0 && this.ball.pos[1] <= 3 && this.ball.pos[0] >= -.1 && this.ball.pos[0] <= .1) {
+  if(this.ball.pos[1] >= 0 && this.ball.pos[1] <= 3 && this.ball.pos[0] >= -.2 && this.ball.pos[0] <= .2) {
     front_wall = vec3(0, 0, -9.8);
   }
-
+  
   this.ball.ext_force = this.g_acc.times(this.ball.mass);
   this.ball.ext_force.add_by(this.force);
   this.force = vec3(0, 0, 0);
@@ -550,8 +490,21 @@ power_up()
 power_down()
 {
   if (this.force[2] - 1000 <= 0) {
+    this.force.add_by(vec3(0, 0, 1000));
     this.ball.update_arc(this.time_step, this.force, this.spline_length); 
     return;
   }
+}
+move_up() {
+  this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(0, 0, -1)); 
+}
+move_down() {
+  this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(0, 0, 1)); 
+}
+move_left() {
+  this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(-1, 0, 0));
+}
+move_right() {
+  this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(1, 0, 0)); 
 }
 }
