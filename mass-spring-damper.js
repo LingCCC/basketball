@@ -160,20 +160,23 @@ export const Simulation = class Simulation {
     }
   }
 
-  draw(webgl_manager, uniforms, shapes, materials) {
+  draw(webgl_manager, uniforms, shapes, materials, draw_particles=false) {
     const blue = color(0, 0, 1, 1),
       red = color(1, 0, 0, 1), 
       white = color(1, 1, 1, 1);
     // draw particles
-    for (const p of this.particles) {
-      const pos = p.pos;
-      let model_transform = Mat4.scale(0.05, 0.05, 0.05);
-      model_transform.pre_multiply(Mat4.translation(pos[0], pos[1], pos[2]));
-    //   shapes.ball.draw(webgl_manager, uniforms, model_transform, {
-    //     ...materials.plastic,
-    //     color: white,
-    //   });
+    if(draw_particles) {
+      for (const p of this.particles) {
+        const pos = p.pos;
+        let model_transform = Mat4.scale(0.05, 0.05, 0.05);
+        model_transform.pre_multiply(Mat4.translation(pos[0], pos[1], pos[2]));
+        shapes.ball.draw(webgl_manager, uniforms, model_transform, {
+          ...materials.plastic,
+          color: white,
+        });
+      }
     }
+    
     // draw springs
     for (const s of this.springs) {
       const p1 = s.particle_1.pos.copy();

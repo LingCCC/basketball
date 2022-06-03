@@ -64,9 +64,9 @@ function collisionDetect(ball, netParticles)
       //Apply Momentum
       //console.log("Particle" + i);
       let newVelocity = momentum(ball, currParticle);
-      ball.vel = vec3(newVelocity[0], newVelocity[1], newVelocity[2]);
+      ball.vel = vec3(newVelocity[0], newVelocity[1] + .2, newVelocity[2] + .2)
       currParticle.vel = vec3(newVelocity[0], newVelocity[1], newVelocity[2]);
-    }
+    } 
   }
 }
 
@@ -154,6 +154,18 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.reachNet = false;
 
         this.human = new Articulated_Human();
+
+         // for hoop collision detection
+         this.sim_hoop = new Simulation(); 
+         this.sim_hoop.create_particles(36); 
+         let radius = .75; 
+         for(let k = 0; k < 360; k += 10) {
+           var x = Math.cos(k * Math.PI/180) * radius;
+           var y = Math.sin(k * Math.PI/180) * radius;
+           // console.log(x, y); 
+           this.sim_hoop.set_particle(k/10, .3, x, 6.5, y - 8.8, 0, 0, 0);
+         }
+         
       }
 
       init_hoop() {
@@ -183,11 +195,11 @@ const Basketball_Sim_base = defs.Assignment2_base =
             this.sim.set_particle((i*6) + 5, mass,  -.4, y, -8.25, 0, 0, 0); 
           }
         }
-
         this.top_rim = [0, 1, 2, 3, 4, 5]; 
 
         this.sim.create_spring((num_layers-1)*12); 
-        const ks = 11, kd = 25, len = 0; // still need to adjust these parameters a bit
+        // const ks = 11, kd = 25, len = 0; // still need to adjust these parameters a bit
+        const ks = 12, kd = 25, len = 0;
         for(let i = 0; i < num_layers-1; i++) {
           if(i%2 === 0) { 
             for(let k = 0; k < 6; k++) {
@@ -354,6 +366,7 @@ export class Basketball_Sim extends Basketball_Sim_base
           this.update(this.time_step);
         }
         this.sim.special_update(this.time_step, this.top_rim); 
+        //this.sim_hoop.special_update(this.time_step, this.hoop_count, true); 
         this.t_sim += this.time_step;
       }
     }
@@ -364,6 +377,7 @@ export class Basketball_Sim extends Basketball_Sim_base
     this.human.draw(caller, this.uniforms, {... this.materials.plastic, color: color(1, 1, 1, 1)});
     this.ball.draw(caller, this.uniforms, this.shapes, this.materials, this.shoot, this.time_step, this.force);
     this.sim.draw(caller, this.uniforms, this.shapes, this.materials)
+    //this.sim_hoop.draw(caller, this.uniforms, this.shapes, this.materials, true)
 
     // console.log("f: " + this.ball.ext_force);
     // console.log("p: " + this.ball.ext_force);
@@ -476,10 +490,11 @@ reset() {
   this.ball.ext_force = vec3(0, 0, 0);
   this.ball.update_arc(this.time_step, this.force);
   this.shoot = false;
+  this.init_hoop(); 
 }
 
 update(dt) {
-  const ground = vec3(0, .5, 0);
+  let ground = vec3(0, .5, 0);
   const ground_normal = vec3(0, 1, 0);
   let front_wall = vec3(0, 0, -10);
   const front_wall_normal = vec3(0, 0, 1);
@@ -491,12 +506,20 @@ update(dt) {
   const back_wall_normal = vec3(0, 0, -1);
 
   //see if ball lands in area of backboard 
-  if(this.ball.pos[1] >= 5 && this.ball.pos[1] <= 7.5 && this.ball.pos[0] >= -1.125 && this.ball.pos[0] <= 1.125) {
+  if(this.ball.pos[1] >= 5 && this.ball.pos[1] <= 8.5 && this.ball.pos[0] >= -2.25 && this.ball.pos[0] <= 2.25) {
     front_wall = vec3(0, 0, -9.8);
   }
   //see if ball lands in hoop stem/stand
-  if(this.ball.pos[1] >= 0 && this.ball.pos[1] <= 3 && this.ball.pos[0] >= -.2 && this.ball.pos[0] <= .2) {
+  if(this.ball.pos[1] >= 0 && this.ball.pos[1] <= 3 && this.ball.pos[0] >= -.3 && this.ball.pos[0] <= .3) {
     front_wall = vec3(0, 0, -9.8);
+  }
+
+  const particles = this.sim_hoop.particles; 
+  for(const p of particles) {
+    if(distance(this.ball.pos, p.pos) < 0.25) {
+      ground = vec3(0, 6.5, 0); 
+      break; 
+    }
   }
   
   this.ball.ext_force = this.g_acc.times(this.ball.mass);
@@ -549,11 +572,12 @@ power_up()
 power_down()
 {
   this.force.add_by(vec3(0, 0, 1000));
-  if (this.force[2] - 1000 <= 0) {
-    this.force.add_by(vec3(0, 0, 1000));
-    this.ball.update_arc(this.time_step, this.force, this.spline_length); 
-    return;
-  }
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+  // if (this.force[2] - 1000 <= 0) {
+  //   this.force.add_by(vec3(0, 0, 1000));
+  //   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+  //   return;
+  // }
 }
 move_up() {
   this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(0, 0, -1)); 
