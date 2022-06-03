@@ -41,14 +41,32 @@ function momentum(ball, particle)
   let partMomentumY = particle.mass * particle.vel[1];
   let partMomentumZ = particle.mass * particle.vel[2];
 
-  let mass = ball.mass + particle.mass;
+  let totMomX = ballMomentumX + partMomentumX;
+  let totMomY = ballMomentumY + partMomentumY;
+  let totMomZ = ballMomentumZ + partMomentumZ;
+  
   //returns new velocity of inelastic collision
-  return [(ballMomentumX + partMomentumX) / mass, (ballMomentumY + partMomentumY) / mass, (ballMomentumZ + partMomentumZ) / mass]
+  //return [(ballMomentumX + partMomentumX) / mass, (ballMomentumY + partMomentumY) / mass, (ballMomentumZ + partMomentumZ) / mass]
+  return [totMomX, totMomY, totMomZ];
 }
 
 function preventClip(ball, particle)
 {
 
+  let deltaX = (math.abs(ball.pos[0] - particle.pos[0]));
+  let deltaY = (math.abs(ball.pos[1] - particle.pos[1]));
+  let deltaZ = (math.abs(ball.pos[2] - particle.pos[2]));
+
+  if(particle.pos[0] < ball.pos[0])
+    deltaX = -deltaX;
+  if(particle.pos[1] < ball.pos[1])
+    deltaY = -deltaY;
+  if(particle.pos[2] < ball.pos[2])
+    deltaZ = -deltaZ;
+
+  let normal = math.sqrt(deltaX**2 + deltaY**2 + deltaZ**2);
+
+  return [deltaX / normal * .3, deltaY / normal * .3, deltaZ / normal * .3];
 }
 
 
@@ -63,10 +81,21 @@ function collisionDetect(ball, netParticles)
     {
       //Apply Momentum
       //console.log("Particle" + i);
-      let newVelocity = momentum(ball, currParticle);
-      ball.vel = vec3(newVelocity[0], newVelocity[1] + .2, newVelocity[2] + .2)
-      currParticle.vel = vec3(newVelocity[0], newVelocity[1], newVelocity[2]);
-    } 
+      let newMomentum = momentum(ball, currParticle);
+
+      let newVelocity = [newMomentum[0] * .90 / ball.mass, newMomentum[1] * .99 / ball.mass, newMomentum[2] * .90 / ball.mass ];
+
+      //newMomentum.times(.999 / ball.mass);
+
+      ball.vel = vec3(newVelocity[0], newVelocity[1], newVelocity[2]);
+
+      let newVelocity2 = [ - newMomentum[0] * .01 / .01,  - newMomentum[1] * .01 / .01,  - newMomentum[2] * .01 / .01 ];
+
+      currParticle.vel = vec3(newVelocity2[0], newVelocity2[1], newVelocity2[2]);
+
+      let newPos = preventClip(ball, currParticle);
+      currParticle.pos = vec3(newPos[0] + ball.pos[0], newPos[1] + ball.pos[1], newPos[2] + ball.pos[2]);
+    }
   }
 }
 
@@ -490,9 +519,12 @@ this.new_line();
 debug()
 {
   console.log("New Set Here");
-  for(let i = 0; i < 30; i++) {
-    console.log( i + ": " + this.sim.particles[i].pos);
-  }
+ /* for(let i = 0; i < 30; i++) {
+    console.log( i + ": " + this.sim.particles[i].ext_force);
+  }*/
+  console.log(this.sim.particles);
+
+  //0, 7.5, -8.8
 }
 
 reset() {
