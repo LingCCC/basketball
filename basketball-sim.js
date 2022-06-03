@@ -16,11 +16,57 @@ function closeToDest(destination, position)
   let xDiff = Math.abs(effPos[0] - destination[0]);
   let yDiff = Math.abs(effPos[1] - destination[1]);
   let zDiff = Math.abs(effPos[2] - destination[2]);
-  if(xDiff < 0.1 && yDiff < 0.1 && zDiff < 0.1)
+  if(xDiff < 0.3 && yDiff < 0.3 && zDiff < 0.3)
   {
     return true;
   }
   return false;
+}
+
+function distance(ballPos, particlePos)
+{
+  let position = ballPos;
+  let distance1 = Math.sqrt((position[0] - particlePos[0])**2 + (position[1] - particlePos[1])**2);
+  return Math.sqrt(distance1**2 + (position[2] - particlePos[2])**2);
+}
+
+function momentum(ball, particle)
+{
+  let ballMomentumX = ball.mass * ball.vel[0];
+  let ballMomentumY = ball.mass * ball.vel[1];
+  let ballMomentumZ = ball.mass * ball.vel[2];
+
+  let partMomentumX = particle.mass * particle.vel[0];
+  let partMomentumY = particle.mass * particle.vel[1];
+  let partMomentumZ = particle.mass * particle.vel[2];
+
+  let mass = ball.mass + particle.mass;
+  //returns new velocity of inelastic collision
+  return [(ballMomentumX + partMomentumX) / mass, (ballMomentumY + partMomentumY) / mass, (ballMomentumZ + partMomentumZ) / mass]
+}
+
+function preventClip(ball, particle)
+{
+
+}
+
+
+function collisionDetect(ball, netParticles)
+{
+  let listLength = netParticles.particles.length;
+  for(let i = 0; i < listLength; i++)
+  {
+    //console.log(i)
+    let currParticle = netParticles.particles[i];
+    if(distance(ball.pos, currParticle.pos) < 0.25)
+    {
+      //Apply Momentum
+      //console.log("Particle" + i);
+      let newVelocity = momentum(ball, currParticle);
+      ball.vel = vec3(newVelocity[0], newVelocity[1], newVelocity[2]);
+      currParticle.vel = vec3(newVelocity[0], newVelocity[1], newVelocity[2]);
+    }
+  }
 }
 
 export
@@ -65,7 +111,7 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.materials.metal   = { shader: phong, ambient: .2, diffusivity: 1, specularity:  1, color: color( .9,.5,.9,1 ) }
         this.materials.rgb = { shader: tex_phong, ambient: .5, texture: new Texture( "assets/rgb.jpg" ) }
         this.materials.wall2 = { shader: phong, ambient: .2, diffusivity: 1, specularity: .5, color: color( .9,.5,.9,1 ) }
-        this.materials.wall = {shader: tex_phong, ambient: .2, texture: new Texture( "assets/Fence.jpg" )}
+        this.materials.wall = {shader: tex_phong, ambient: .2, texture: new Texture( "assets/Fence.png" )}
         this.materials.court = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/court.png" )}
         this.materials.backboard = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/backboard.jpg" )}
         this.materials.ball = {shader: tex_phong, ambient: .9, texture: new Texture( "assets/basketball.png" )}
@@ -229,7 +275,9 @@ const Basketball_Sim_base = defs.Assignment2_base =
         // this.sim.set_spring(32, 16, 22, 10, 5, 0); 
         // this.sim.set_spring(33, 17, 22, 10, 5, 0); 
         // this.sim.set_spring(34, 17, 23, 10, 5, 0); 
-        // this.sim.set_spring(35, 12, 23, 10, 5, 0); 
+        // this.sim.set_spring(35, 12, 23, 10, 5, 0);
+
+        console.log(this.sim.particles);
       }
 
       render_animation( caller )
@@ -379,6 +427,8 @@ export class Basketball_Sim extends Basketball_Sim_base
         this.t_sim += this.time_step;
       }
     }
+    //console.log("Running Collision Detect");
+    collisionDetect(this.ball, this.sim);
 
     this.ball.draw(caller, this.uniforms, this.shapes, this.materials, this.shoot, this.time_step, this.force);
     this.sim.draw(caller, this.uniforms, this.shapes, this.materials)
@@ -387,13 +437,13 @@ export class Basketball_Sim extends Basketball_Sim_base
     // console.log("p: " + this.ball.ext_force);
 
     //confirms ball reaches hoop and passes through net
-    if(closeToDest([0, 7.5, -9.8], this.ball.pos))
+    if(closeToDest([0, 7.5, -9.5], this.ball.pos))
     {
       this.reachHoop = true;
     }
     if(this.reachHoop)
     {
-      if(closeToDest([0, 6.0, -9.8], this.ball.pos))
+      if(closeToDest([0, 6.0, -9.5], this.ball.pos))
       {
         this.reachNet = true;
       }
@@ -404,6 +454,11 @@ export class Basketball_Sim extends Basketball_Sim_base
       this.reachHoop = false;
       this.reachNet = false;
       this.scoreText.textContent = "Score: " + this.score;
+
+/*      for(let i = 0; i < 30; i++)
+      {
+        this.sim.particles[i].ext_force = vec3(0, 0, 0);
+      }*/
     }
 
     //Score Text and Styling
@@ -464,14 +519,23 @@ this.key_triggered_button( "Hard", ["H"], () => {
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 });
 this.new_line();
+  this.key_triggered_button( "Debug", ["]"], this.debug );
+}
+
+debug()
+{
+  console.log("New Set Here");
+  for(let i = 0; i < 30; i++) {
+    console.log( i + ": " + this.sim.particles[i].pos);
+  }
 }
 
 reset() {
-  this.ball.pos = vec3(0, 10, -9.8);
+  this.ball.pos = vec3(0, 10, -9.5);
   this.ball.acc = vec3(0, 0, 0);
   this.ball.vel = vec3(0, 0, 0);
   this.ball.ext_force = vec3(0, 0, 0);
-  this.running = false;
+  this.running = true;
   this.ball.update_arc(this.time_step, this.force); 
 }
 
@@ -545,6 +609,7 @@ power_up()
 }
 power_down()
 {
+  this.force.add_by(vec3(0, 0, 1000));
   if (this.force[2] - 1000 <= 0) {
     this.ball.update_arc(this.time_step, this.force, this.spline_length); 
     return;
