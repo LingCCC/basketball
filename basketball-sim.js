@@ -416,10 +416,7 @@ export class Basketball_Sim extends Basketball_Sim_base
 render_controls()
 {
 // render_controls(): Sets up a panel of interactive HTML elements, including
-// buttons with key bindings for affecting this scene, and live info readouts.
-this.live_string(box => {
-    box.textContent ="Difficulty: " + this.difficulty;
-});
+// buttons with key bindings for affecting this scene, and live info readouts
 //this.control_panel.innerHTML += "Difficulty: " + difficulty;
 //this.control_panel.innerHTML += "Assignment 2: IK Engine";
 
@@ -439,8 +436,10 @@ this.key_triggered_button( "Inc Power", ["P"], this.power_up );
 this.key_triggered_button( "Dec Power", ["U"], this.power_down );
 this.new_line();
 this.live_string(box => {
-  box.textContent ="Status: " + (this.shoot ? "shooting ": "paused ");
+  box.textContent ="Status: " + (this.shoot ? "shooting - watch the ball, move human around the court, then press 'Shoot' to pick up ball & re=adjust shooting arc": 
+                                              "paused - use angle + power buttons to adjust arc, then press 'Shoot'");
 });
+this.new_line();
 this.key_triggered_button("Shoot", ["O"], () => {
   // this.running = !this.running;
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
@@ -451,15 +450,22 @@ this.key_triggered_button( "Reset", ["["], this.reset );
 this.new_line();
 this.key_triggered_button("Set Random Position", ["R"], this.random_pos)
 this.new_line(); 
-// this.key_triggered_button( "Move Forward", ["W"], this.move_up );
-// //this.new_line();
-// this.key_triggered_button( "Move Right", ["D"], this.move_right );
-// //this.new_line();
-// this.key_triggered_button( "Move Backwards", ["S"], this.move_down );
-// //this.new_line();
-// this.key_triggered_button( "Move Left", ["A"], this.move_left );
-// this.new_line();
+this.live_string(box => {
+  box.textContent = "Move around the court to get closer to the ball. Movement of avatar is only allowed when status is shooting";
+});
+this.new_line(); 
+this.key_triggered_button( "Move Forward", ["W"], this.move_up );
+//this.new_line();
+this.key_triggered_button( "Move Right", ["D"], this.move_right );
+//this.new_line();
+this.key_triggered_button( "Move Backwards", ["S"], this.move_down );
+//this.new_line();
+this.key_triggered_button( "Move Left", ["A"], this.move_left );
+this.new_line();
 
+this.live_string(box => {
+  box.textContent ="Difficulty: " + this.difficulty + "\nAdjusting difficult adjusts length of firing arc";
+});
 this.new_line();
 this.key_triggered_button( "Easy", ["E"], () => { 
   this.spline_length = 5000; 
@@ -604,15 +610,27 @@ power_down()
   // }
 }
 move_up() {
+  const z = this.human.root.location_matrix[2][3]; 
+  if(!this.shoot || z <= -8) return
   this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(0, 0, -1)); 
+  this.human.reset_all();
 }
 move_down() {
+  const z = this.human.root.location_matrix[2][3]; 
+  if(!this.shoot || z >= 9 ) return
   this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(0, 0, 1)); 
+  this.human.reset_all();
 }
 move_left() {
+  const x = this.human.root.location_matrix[0][3]; 
+  if(!this.shoot || x <= -9 ) return
   this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(-1, 0, 0));
+  this.human.reset_all();
 }
 move_right() {
+  const x = this.human.root.location_matrix[0][3]; 
+  if(!this.shoot || x >= 9 ) return
   this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(1, 0, 0)); 
+  this.human.reset_all();
 }
 }
