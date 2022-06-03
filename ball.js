@@ -123,12 +123,11 @@ export class Ball {
     this.arc = h; 
   }
 
-  draw(webgl_manager, uniforms, shapes, materials, running, dt, force) {
+  draw(webgl_manager, uniforms, shapes, materials, running) {
     const blue = color(0, 0, 1, 1), red = color(1, 0, 0, 1);
 
     //draw shooting arc
     if (running === false) {
-      //this.make_arc(dt, force);
       shapes.curve.update(webgl_manager, uniforms, (s) =>
         this.arc.get_position(s)
       );
