@@ -10,7 +10,7 @@ export class Ball {
   constructor() {
     this.mass = 1; // kg
     this.radius = 0.037; // meter
-    this.pos = vec3(0, 0.5, 0);
+    this.pos = vec3(0, 3.5, 0);
     this.vel = vec3(0, 0, 0);
     this.acc = vec3(0, 0, 0);
     this.ext_force = vec3(0, 0, 0);
@@ -35,14 +35,14 @@ export class Ball {
 
   calculate_friction(g_acc) {
     const fn = g_acc.times(this.mass);
-    const mu_k = .1;
+    const mu_k = 1.2;
 
     let f_k = vec3(0, 0, 0);
     if (!this.vel.equals(f_k)) {
-      f_k = this.vel.times(fn.norm() * -1 * mu_k);
+      f_k = this.vel.times(fn.norm() * -mu_k);
     }
 
-    if (this.pos[1] > -0.1 && this.pos[1] < 0.1) {
+    if (this.pos[1] > 0 && this.pos[1] < 0.5) {
       f_k[1] = 0;
       this.ext_force.add_by(f_k);
     }
