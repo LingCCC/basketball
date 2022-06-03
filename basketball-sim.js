@@ -490,19 +490,21 @@ debug()
 }
 
 reset() {
+  this.shoot = false;
+  
   this.ball.pos = vec3(0, 3.5, 0);
   this.ball.acc = vec3(0, 0, 0);
   this.ball.vel = vec3(0, 0, 0);
   this.ball.ext_force = vec3(0, 0, 0);
   this.ball.update_arc(this.time_step, this.force);
-  this.human.theta1 =  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  this.human.theta2 =  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  this.human.update_articulation(); 
+
   this.human.root.location_matrix = Mat4.translation(0, 3.5, 2); 
-  this.shoot = false;
+  this.human.reset_all();
 }
 
 random_pos() {
+  this.shoot = false;
+
   const x = (Math.random() * 18) - 9;
   const z = (Math.random() * 18) - 9;
   this.ball.pos = vec3(x, 3.5, z-2);
@@ -510,8 +512,9 @@ random_pos() {
   this.ball.vel = vec3(0, 0, 0);
   this.ball.ext_force = vec3(0, 0, 0);
   this.ball.update_arc(this.time_step, this.force);
+
   this.human.root.location_matrix = Mat4.translation(x, 3.5, z); 
-  this.shoot = false;
+  this.human.reset_all();
 }
 
 update(dt) {
