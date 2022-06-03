@@ -438,6 +438,9 @@ this.new_line();
 this.key_triggered_button( "Inc Power", ["P"], this.power_up );
 this.key_triggered_button( "Dec Power", ["U"], this.power_down );
 this.new_line();
+this.live_string(box => {
+  box.textContent ="Status: " + (this.shoot ? "shooting ": "paused ");
+});
 this.key_triggered_button("Shoot", ["O"], () => {
   // this.running = !this.running;
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
@@ -446,6 +449,8 @@ this.key_triggered_button("Shoot", ["O"], () => {
 this.new_line();
 this.key_triggered_button( "Reset", ["["], this.reset );
 this.new_line();
+this.key_triggered_button("Set Random Position", ["R"], this.random_pos)
+this.new_line(); 
 // this.key_triggered_button( "Move Forward", ["W"], this.move_up );
 // //this.new_line();
 // this.key_triggered_button( "Move Right", ["D"], this.move_right );
@@ -471,6 +476,7 @@ this.key_triggered_button( "Hard", ["H"], () => {
   this.difficulty = "Hard";   
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 });
+
 this.new_line();
   this.key_triggered_button( "Debug", ["]"], this.debug );
 }
@@ -489,8 +495,23 @@ reset() {
   this.ball.vel = vec3(0, 0, 0);
   this.ball.ext_force = vec3(0, 0, 0);
   this.ball.update_arc(this.time_step, this.force);
+  this.human.theta1 =  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  this.human.theta2 =  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  this.human.update_articulation(); 
+  this.human.root.location_matrix = Mat4.translation(0, 3.5, 2); 
   this.shoot = false;
-  this.init_hoop(); 
+}
+
+random_pos() {
+  const x = (Math.random() * 18) - 9;
+  const z = (Math.random() * 18) - 9;
+  this.ball.pos = vec3(x, 3.5, z-2);
+  this.ball.acc = vec3(0, 0, 0);
+  this.ball.vel = vec3(0, 0, 0);
+  this.ball.ext_force = vec3(0, 0, 0);
+  this.ball.update_arc(this.time_step, this.force);
+  this.human.root.location_matrix = Mat4.translation(x, 3.5, z); 
+  this.shoot = false;
 }
 
 update(dt) {
