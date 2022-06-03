@@ -117,9 +117,9 @@ class Articulated_Human {
         const r_ankle_loc = Mat4.translation(0, -1.4, 0);
         this.r_ankle = new Arc("r_ankle", this.rl_leg_node, this.r_foot_node, r_ankle_loc);
         this.ru_leg_node.children_arcs.push(this.r_ankle);
-      }
+    }
     
-      init_left_leg() {
+    init_left_leg() {
         const sphere_shape = shapes.sphere;
         //upper leg
         let lu_leg_transform = Mat4.scale(0.3, 1, 0.3); 
@@ -138,7 +138,25 @@ class Articulated_Human {
         const l_ankle_loc = Mat4.translation(0, -1.4, 0);
         this.l_ankle = new Arc("l_ankle", this.ll_leg_node, this.l_foot_node, l_ankle_loc);
         this.lu_leg_node.children_arcs.push(this.l_ankle);
-      }
+    }
+
+    reset_all() {
+        this.root.articulation_matrix = Mat4.identity();
+        this.r_shoulder.articulation_matrix = Mat4.identity();
+        this.r_elbow.articulation_matrix = Mat4.identity();
+        this.r_wrist.articulation_matrix = Mat4.identity();
+        this.l_shoulder.articulation_matrix = Mat4.identity();
+        this.l_elbow.articulation_matrix = Mat4.identity();
+        this.l_wrist.articulation_matrix = Mat4.identity();
+
+        this.theta1 =  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        this.theta2 =  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+
+        this.update_articulation();
+
+        this.r_end_effector_pos = this.get_current_r_end_effector_pos();
+        this.l_end_effector_pos = this.get_current_l_end_effector_pos();
+    }
 
     update(goal, is_shoot) {
         this.update_right(goal, is_shoot);
@@ -171,7 +189,7 @@ class Articulated_Human {
 
         const step = 0.001;
         let end = this.root.location_matrix;
-        end = vec3(end[0][3] - 3, end[1][3] - 10, end[2][3]);
+        end = vec3(end[0][3], end[1][3] - 10, end[2][3]);
         const diff = end.minus(ee_pos).times(step);
 
         const dx = [[diff[0]], [diff[1]], [diff[2]]];
@@ -200,6 +218,7 @@ class Articulated_Human {
         while(error > EPSILON && iteration_count < MAX_ITERATION){
             let diff = goal.minus(this.r_end_effector_pos).times(step);
             const dx = [[diff[0]], [diff[1]], [diff[2]]];
+            // const dx = [[0], [0.0002], [0]];
 
             const j = this.calculate_jacobian_right();
             const j_inv = this.calculate_inverse(j); // pseudo inverse
@@ -234,8 +253,6 @@ class Articulated_Human {
             const j_inv = this.calculate_inverse(j); // pseudo inverse
 
             const dtheta = math.multiply(j_inv, dx); // new dof based on the new position
-
-            //console.log(j)
 
             this.update_left_theta(dtheta);
             this.update_articulation(); // update articulated matrices
@@ -274,7 +291,7 @@ class Articulated_Human {
     }
 
     update_articulation() {
-        this.root.articulation_matrix = this.get_root_arc(this.theta1[0], this.theta1[1], this.theta1[2]);
+        // this.root.articulation_matrix = this.get_root_arc(this.theta1[0], this.theta1[1], this.theta1[2]);
         this.r_shoulder.articulation_matrix = this.get_shoulder_arc(this.theta1[3], this.theta1[4], this.theta1[5]);
         this.r_elbow.articulation_matrix = this.get_elbow_arc(this.theta1[6], this.theta1[7]);
         this.r_wrist.articulation_matrix = this.get_wrist_arc(this.theta1[8], this.theta1[9]);
@@ -447,7 +464,9 @@ class Articulated_Human {
         root_x = vec3(0, 0, 0);
         root_y = vec3(0, 0, 0);
         root_z = vec3(0, 0, 0);
-        elbow_rx = vec3(0, 0, 0);
+        if (this.theta1[5] < -1) {
+            shoulder_rz = vec3(0, 0, 0);
+        }
 
         J[0][0] = root_x[0];
         J[1][0] = root_x[1];

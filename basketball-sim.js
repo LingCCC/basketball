@@ -183,6 +183,18 @@ const Basketball_Sim_base = defs.Assignment2_base =
         this.reachNet = false;
 
         this.human = new Articulated_Human();
+
+         // for hoop collision detection
+         this.sim_hoop = new Simulation(); 
+         this.sim_hoop.create_particles(36); 
+         let radius = .75; 
+         for(let k = 0; k < 360; k += 10) {
+           var x = Math.cos(k * Math.PI/180) * radius;
+           var y = Math.sin(k * Math.PI/180) * radius;
+           // console.log(x, y); 
+           this.sim_hoop.set_particle(k/10, .3, x, 6.5, y - 8.8, 0, 0, 0);
+         }
+         
       }
 
       init_hoop() {
@@ -212,11 +224,11 @@ const Basketball_Sim_base = defs.Assignment2_base =
             this.sim.set_particle((i*6) + 5, mass,  -.4, y, -8.25, 0, 0, 0); 
           }
         }
-
         this.top_rim = [0, 1, 2, 3, 4, 5]; 
 
         this.sim.create_spring((num_layers-1)*12); 
-        const ks = 11, kd = 25, len = 0; // still need to adjust these parameters a bit
+        // const ks = 11, kd = 25, len = 0; // still need to adjust these parameters a bit
+        const ks = 12, kd = 25, len = 0;
         for(let i = 0; i < num_layers-1; i++) {
           if(i%2 === 0) { 
             for(let k = 0; k < 6; k++) {
@@ -383,6 +395,7 @@ export class Basketball_Sim extends Basketball_Sim_base
           this.update(this.time_step);
         }
         this.sim.special_update(this.time_step, this.top_rim); 
+        //this.sim_hoop.special_update(this.time_step, this.hoop_count, true); 
         this.t_sim += this.time_step;
       }
     }
@@ -393,6 +406,7 @@ export class Basketball_Sim extends Basketball_Sim_base
     this.human.draw(caller, this.uniforms, {... this.materials.plastic, color: color(1, 1, 1, 1)});
     this.ball.draw(caller, this.uniforms, this.shapes, this.materials, this.shoot, this.time_step, this.force);
     this.sim.draw(caller, this.uniforms, this.shapes, this.materials)
+    //this.sim_hoop.draw(caller, this.uniforms, this.shapes, this.materials, true)
 
     // console.log("f: " + this.ball.ext_force);
     // console.log("p: " + this.ball.ext_force);
@@ -431,10 +445,7 @@ export class Basketball_Sim extends Basketball_Sim_base
 render_controls()
 {
 // render_controls(): Sets up a panel of interactive HTML elements, including
-// buttons with key bindings for affecting this scene, and live info readouts.
-this.live_string(box => {
-    box.textContent ="Difficulty: " + this.difficulty;
-});
+// buttons with key bindings for affecting this scene, and live info readouts
 //this.control_panel.innerHTML += "Difficulty: " + difficulty;
 //this.control_panel.innerHTML += "Assignment 2: IK Engine";
 
@@ -453,6 +464,11 @@ this.new_line();
 this.key_triggered_button( "Inc Power", ["P"], this.power_up );
 this.key_triggered_button( "Dec Power", ["U"], this.power_down );
 this.new_line();
+this.live_string(box => {
+  box.textContent ="Status: " + (this.shoot ? "shooting - watch the ball, move human around the court, then press 'Shoot' to pick up ball & re=adjust shooting arc": 
+                                              "paused - use angle + power buttons to adjust arc, then press 'Shoot'");
+});
+this.new_line();
 this.key_triggered_button("Shoot", ["O"], () => {
   // this.running = !this.running;
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
@@ -461,15 +477,24 @@ this.key_triggered_button("Shoot", ["O"], () => {
 this.new_line();
 this.key_triggered_button( "Reset", ["["], this.reset );
 this.new_line();
-// this.key_triggered_button( "Move Forward", ["W"], this.move_up );
-// //this.new_line();
-// this.key_triggered_button( "Move Right", ["D"], this.move_right );
-// //this.new_line();
-// this.key_triggered_button( "Move Backwards", ["S"], this.move_down );
-// //this.new_line();
-// this.key_triggered_button( "Move Left", ["A"], this.move_left );
-// this.new_line();
+this.key_triggered_button("Set Random Position", ["R"], this.random_pos)
+this.new_line(); 
+this.live_string(box => {
+  box.textContent = "Move around the court to get closer to the ball. Movement of avatar is only allowed when status is shooting";
+});
+this.new_line(); 
+this.key_triggered_button( "Move Forward", ["W"], this.move_up );
+//this.new_line();
+this.key_triggered_button( "Move Right", ["D"], this.move_right );
+//this.new_line();
+this.key_triggered_button( "Move Backwards", ["S"], this.move_down );
+//this.new_line();
+this.key_triggered_button( "Move Left", ["A"], this.move_left );
+this.new_line();
 
+this.live_string(box => {
+  box.textContent ="Difficulty: " + this.difficulty + "\nAdjusting difficult adjusts length of firing arc";
+});
 this.new_line();
 this.key_triggered_button( "Easy", ["E"], () => { 
   this.spline_length = 5000; 
@@ -486,6 +511,7 @@ this.key_triggered_button( "Hard", ["H"], () => {
   this.difficulty = "Hard";   
   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
 });
+
 this.new_line();
   this.key_triggered_button( "Debug", ["]"], this.debug );
 }
@@ -502,16 +528,35 @@ debug()
 }
 
 reset() {
+  this.shoot = false;
+  
   this.ball.pos = vec3(0, 3.5, 0);
   this.ball.acc = vec3(0, 0, 0);
   this.ball.vel = vec3(0, 0, 0);
   this.ball.ext_force = vec3(0, 0, 0);
   this.ball.update_arc(this.time_step, this.force);
+
+  this.human.root.location_matrix = Mat4.translation(0, 3.5, 2); 
+  this.human.reset_all();
+}
+
+random_pos() {
   this.shoot = false;
+
+  const x = (Math.random() * 18) - 9;
+  const z = (Math.random() * 18) - 9;
+  this.ball.pos = vec3(x, 3.5, z-2);
+  this.ball.acc = vec3(0, 0, 0);
+  this.ball.vel = vec3(0, 0, 0);
+  this.ball.ext_force = vec3(0, 0, 0);
+  this.ball.update_arc(this.time_step, this.force);
+
+  this.human.root.location_matrix = Mat4.translation(x, 3.5, z); 
+  this.human.reset_all();
 }
 
 update(dt) {
-  const ground = vec3(0, .5, 0);
+  let ground = vec3(0, .5, 0);
   const ground_normal = vec3(0, 1, 0);
   let front_wall = vec3(0, 0, -10);
   const front_wall_normal = vec3(0, 0, 1);
@@ -523,12 +568,20 @@ update(dt) {
   const back_wall_normal = vec3(0, 0, -1);
 
   //see if ball lands in area of backboard 
-  if(this.ball.pos[1] >= 5 && this.ball.pos[1] <= 7.5 && this.ball.pos[0] >= -1.125 && this.ball.pos[0] <= 1.125) {
+  if(this.ball.pos[1] >= 5 && this.ball.pos[1] <= 8.5 && this.ball.pos[0] >= -2.25 && this.ball.pos[0] <= 2.25) {
     front_wall = vec3(0, 0, -9.8);
   }
   //see if ball lands in hoop stem/stand
-  if(this.ball.pos[1] >= 0 && this.ball.pos[1] <= 3 && this.ball.pos[0] >= -.2 && this.ball.pos[0] <= .2) {
+  if(this.ball.pos[1] >= 0 && this.ball.pos[1] <= 3 && this.ball.pos[0] >= -.3 && this.ball.pos[0] <= .3) {
     front_wall = vec3(0, 0, -9.8);
+  }
+
+  const particles = this.sim_hoop.particles; 
+  for(const p of particles) {
+    if(distance(this.ball.pos, p.pos) < 0.25) {
+      ground = vec3(0, 6.5, 0); 
+      break; 
+    }
   }
   
   this.ball.ext_force = this.g_acc.times(this.ball.mass);
@@ -581,22 +634,35 @@ power_up()
 power_down()
 {
   this.force.add_by(vec3(0, 0, 1000));
-  if (this.force[2] - 1000 <= 0) {
-    this.force.add_by(vec3(0, 0, 1000));
-    this.ball.update_arc(this.time_step, this.force, this.spline_length); 
-    return;
-  }
+  this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+  // if (this.force[2] - 1000 <= 0) {
+  //   this.force.add_by(vec3(0, 0, 1000));
+  //   this.ball.update_arc(this.time_step, this.force, this.spline_length); 
+  //   return;
+  // }
 }
 move_up() {
+  const z = this.human.root.location_matrix[2][3]; 
+  if(!this.shoot || z <= -8) return
   this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(0, 0, -1)); 
+  this.human.reset_all();
 }
 move_down() {
+  const z = this.human.root.location_matrix[2][3]; 
+  if(!this.shoot || z >= 9 ) return
   this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(0, 0, 1)); 
+  this.human.reset_all();
 }
 move_left() {
+  const x = this.human.root.location_matrix[0][3]; 
+  if(!this.shoot || x <= -9 ) return
   this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(-1, 0, 0));
+  this.human.reset_all();
 }
 move_right() {
+  const x = this.human.root.location_matrix[0][3]; 
+  if(!this.shoot || x >= 9 ) return
   this.human.root.location_matrix = this.human.root.location_matrix.times(Mat4.translation(1, 0, 0)); 
+  this.human.reset_all();
 }
 }
