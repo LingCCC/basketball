@@ -228,7 +228,7 @@ const Basketball_Sim_base = defs.Assignment2_base =
 
         this.sim.create_spring((num_layers-1)*12); 
         // const ks = 11, kd = 25, len = 0; // still need to adjust these parameters a bit
-        const ks = 12, kd = 25, len = 0;
+        const ks = 12, kd = 20, len = 0;
         for(let i = 0; i < num_layers-1; i++) {
           if(i%2 === 0) { 
             for(let k = 0; k < 6; k++) {
