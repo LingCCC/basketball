@@ -527,6 +527,10 @@ debug()
   //0, 7.5, -8.8
 }
 
+sphere_collision(pos, sphere) {
+  return (pos.minus(sphere.pos)).norm() - sphere.radius < 0; 
+}
+
 reset() {
   this.shoot = false;
   
@@ -538,13 +542,15 @@ reset() {
 
   this.human.root.location_matrix = Mat4.translation(0, 3.5, 2); 
   this.human.reset_all();
+
+  this.force = vec3(0, 0, 0);
 }
 
 random_pos() {
   this.shoot = false;
 
-  const x = (Math.random() * 18) - 9;
-  const z = (Math.random() * 18) - 9;
+  const x = (Math.random() * 16) - 8;
+  const z = (Math.random() * 16) - 8;
   this.ball.pos = vec3(x, 3.5, z-2);
   this.ball.acc = vec3(0, 0, 0);
   this.ball.vel = vec3(0, 0, 0);
@@ -553,6 +559,8 @@ random_pos() {
 
   this.human.root.location_matrix = Mat4.translation(x, 3.5, z); 
   this.human.reset_all();
+
+  this.force = vec3(0, 0, 0);
 }
 
 update(dt) {
@@ -578,7 +586,11 @@ update(dt) {
 
   const particles = this.sim_hoop.particles; 
   for(const p of particles) {
-    if(distance(this.ball.pos, p.pos) < 0.25) {
+    // if(distance(this.ball.pos, p.pos) < 0.25) {
+    //   ground = vec3(0, 6.5, 0); 
+    //   break; 
+    // }
+    if(this.sphere_collision(p.pos, this.ball)) {
       ground = vec3(0, 6.5, 0); 
       break; 
     }

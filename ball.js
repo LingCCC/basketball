@@ -9,7 +9,7 @@ const { vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component } =
 export class Ball {
   constructor() {
     this.mass = 1; // kg
-    this.radius = 0.037; // meter
+    this.radius = 0.5; // meter
     this.pos = vec3(0, 3.5, 0);
     this.vel = vec3(0, 0, 0);
     this.acc = vec3(0, 0, 0);
